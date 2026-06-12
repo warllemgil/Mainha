@@ -1,0 +1,13 @@
+{
+  "warllem": {
+    "name": "Voz do Warllem",
+    "hf_repo": "warllem/Super_voz",
+    "voice_path": "voices/v_minha_voz_f5_tts_ptbr",
+    "model_file": "model/model_2000.pt",
+    "vocab_file": "model/vocab.txt",
+    "ref_audio": "data_reference/ref.wav",
+    "ref_text": "data_reference/ref.txt",
+    "language": "pt-BR",
+    "speed": 1.0
+  }
+}
