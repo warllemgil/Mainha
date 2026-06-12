@@ -138,6 +138,9 @@
   let audioUrlAtual = null;
   let audioAbortController = null;
   let leituraSequencia = 0;
+  const audioCache = new Map();
+  const audioFetchesEmAndamento = new Map();
+  const AUDIO_CACHE_MAX_ITEMS = 30;
   let velocidadeIndex = 1;
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
@@ -368,6 +371,86 @@
     }
   }
 
+  function chaveCacheSuperVoz(texto){
+    return JSON.stringify({
+      voice: 'warllem',
+      text: texto,
+      speed: velocidades[velocidadeIndex] || 1.0,
+      mode: leitorSettings.leitorSupervozMode || 'fast',
+      nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
+    });
+  }
+
+  function salvarAudioNoCache(chave, blob){
+    if (!blob || !blob.size) return;
+    if (audioCache.has(chave)) audioCache.delete(chave);
+    audioCache.set(chave, blob);
+
+    while (audioCache.size > AUDIO_CACHE_MAX_ITEMS) {
+      const primeiraChave = audioCache.keys().next().value;
+      audioCache.delete(primeiraChave);
+    }
+  }
+
+  async function buscarAudioSuperVoz(bloco, signal){
+    const chave = chaveCacheSuperVoz(bloco.texto);
+    const blobEmCache = audioCache.get(chave);
+    if (blobEmCache) {
+      log('SuperVoz cache hit');
+      return blobEmCache;
+    }
+
+    const fetchExistente = audioFetchesEmAndamento.get(chave);
+    if (fetchExistente) {
+      log('SuperVoz aguardando fetch existente');
+      return fetchExistente;
+    }
+
+    const requestPromise = fetch(SUPERVOZ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${leitorSettings.leitorHfToken}`
+      },
+      body: JSON.stringify({
+        voice: 'warllem',
+        text: bloco.texto,
+        speed: velocidades[velocidadeIndex] || 1.0,
+        mode: leitorSettings.leitorSupervozMode || 'fast',
+        nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
+      }),
+      signal
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+      salvarAudioNoCache(chave, blob);
+      return blob;
+    }).finally(() => {
+      audioFetchesEmAndamento.delete(chave);
+    });
+
+    audioFetchesEmAndamento.set(chave, requestPromise);
+    return requestPromise;
+  }
+
+  function preCarregarProximoBloco(){
+    if (leitorSettings.leitorTtsProvider !== 'supervoz') return;
+    if (!leitorSettings.leitorHfToken) return;
+    if (!blocos || indiceAtual + 1 >= blocos.length) return;
+
+    const proximoBloco = blocos[indiceAtual + 1];
+    if (!proximoBloco || !proximoBloco.texto) return;
+
+    const chave = chaveCacheSuperVoz(proximoBloco.texto);
+    if (audioCache.has(chave) || audioFetchesEmAndamento.has(chave)) return;
+
+    buscarAudioSuperVoz(proximoBloco)
+      .then(() => log('SuperVoz proximo bloco em cache'))
+      .catch((err) => log('preload SuperVoz falhou', err && err.message ? err.message : err));
+  }
+
   function limparDestaques(){
     document.querySelectorAll('.leitor-paragrafo-ativo').forEach(el => el.classList.remove('leitor-paragrafo-ativo'));
     // Avisar iframes para limpar também
@@ -458,27 +541,7 @@
     lendo = true;
 
     try {
-      const response = await fetch(SUPERVOZ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${leitorSettings.leitorHfToken}`
-        },
-        body: JSON.stringify({
-          voice: 'warllem',
-          text: bloco.texto,
-          speed: velocidades[velocidadeIndex] || 1.0,
-          mode: leitorSettings.leitorSupervozMode || 'fast',
-          nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
-        }),
-        signal: audioAbortController.signal
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
+      const blob = await buscarAudioSuperVoz(bloco, audioAbortController.signal);
       if (sequenciaLocal !== leituraSequencia) return;
 
       audioUrlAtual = URL.createObjectURL(blob);
@@ -499,6 +562,7 @@
       status.textContent = `Lendo SuperVoz (${indiceAtual+1}/${blocos.length})`;
       btnPlay.textContent = '⏸';
       await audioAtual.play();
+      preCarregarProximoBloco();
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       log('falha SuperVoz, usando voz nativa', err);

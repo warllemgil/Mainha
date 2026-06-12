@@ -19,6 +19,18 @@ As configurações vêm de `chrome.storage.local`:
 
 Se a SuperVoz falhar, se não houver token ou se o áudio não tocar, o código faz fallback automático para `speechSynthesis`.
 
+## Alteração 2026-06-12 — Cache e Pré-carregamento
+
+Foi adicionado cache em memória para áudios SuperVoz já gerados:
+
+- `audioCache`: guarda até 30 WAVs como `Blob`.
+- `audioFetchesEmAndamento`: evita duas chamadas simultâneas para o mesmo texto/configuração.
+- A chave do cache considera texto, voz, velocidade, modo e `nfe_step`.
+- Ao voltar para um bloco já gerado durante a mesma sessão da página, a extensão toca o áudio em cache sem chamar `/tts` novamente.
+- Enquanto um bloco SuperVoz começa a tocar, a extensão tenta pré-carregar o próximo bloco em segundo plano.
+
+Limitação: esse cache é em memória. Ao recarregar a página ou reiniciar o navegador, os áudios precisam ser gerados de novo.
+
 ## Estratégia de Extração (v3 - Auto-Sync de Iframes bloqueados)
 
 ### Fluxo:
@@ -43,6 +55,7 @@ Se a SuperVoz falhar, se não houver token ou se o áudio não tocar, o código 
 ✅ Problema de blocos repetidos corrigido (filtragem de elementos filhos).
 ✅ Seleção de Voz Neural priorizada (Edge Natural / Google Premium).
 ✅ SuperVoz F5 opcional com fallback para voz nativa.
+✅ Cache em memória e pré-carregamento do próximo bloco para reduzir esperas repetidas.
 
 ## Próximas Etapas
 
