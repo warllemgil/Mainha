@@ -1,0 +1,109 @@
+import logging
+from pathlib import Path
+from threading import Thread
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+
+from f5_engine import F5Engine
+from voice_manager import diagnose_config, load_voices, public_voice_info
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+LOG_DIR = PROJECT_ROOT / "cache" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler(LOG_DIR / "server.log", encoding="utf-8")],
+)
+LOGGER = logging.getLogger("supervoz.app")
+
+app = FastAPI(title="SuperVoz F5 API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+voices = load_voices()
+engine = F5Engine()
+
+
+class TTSRequest(BaseModel):
+    voice: str = "warllem"
+    text: str = Field(..., min_length=1)
+    speed: float | None = Field(default=None, gt=0.2, le=2.5)
+    mode: str = Field(default="balanced", pattern="^(fast|balanced|quality)$")
+    nfe_step: int | None = Field(default=None, ge=4, le=64)
+
+
+@app.on_event("startup")
+def startup() -> None:
+    LOGGER.info("Iniciando SuperVoz F5 API com %s voz(es)", len(voices))
+    for config in voices.values():
+        try:
+            LOGGER.info("Diagnostico de voz %s: %s", config.voice_id, diagnose_config(config))
+        except Exception as exc:
+            LOGGER.warning("Diagnostico de voz falhou para %s: %s", config.voice_id, exc)
+
+    Thread(target=preload_voices, name="supervoz-preload", daemon=True).start()
+
+
+def preload_voices() -> None:
+    try:
+        engine.preload(voices)
+    except Exception:
+        LOGGER.exception("Falha no preload. O /health continua online; /tts tentara carregar sob demanda.")
+
+
+@app.get("/health")
+def health() -> dict:
+    return {
+        "status": "ok",
+        "device": engine.device,
+        "model_loaded": engine.model_loaded,
+        "space": "running",
+    }
+
+
+@app.get("/voices")
+def list_voices() -> dict:
+    return {"voices": [public_voice_info(config) for config in voices.values()]}
+
+
+@app.post("/tts")
+def tts(request: TTSRequest) -> FileResponse:
+    config = voices.get(request.voice)
+    if config is None:
+        raise HTTPException(status_code=404, detail=f"Voz nao encontrada: {request.voice}")
+
+    try:
+        result = engine.synthesize(
+            config,
+            request.text,
+            speed=request.speed,
+            mode=request.mode,
+            nfe_step=request.nfe_step,
+        )
+    except Exception as exc:
+        LOGGER.exception("Falha ao gerar TTS")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    headers = {
+        "X-Generation-Time-Seconds": f"{result.generation_time_seconds:.3f}",
+        "X-TTS-Device": result.device,
+        "X-TTS-NFE-Step": str(result.nfe_step),
+        "Cache-Control": "no-store",
+    }
+    return FileResponse(
+        path=result.output_path,
+        media_type="audio/wav",
+        filename="supervoz.wav",
+        headers=headers,
+    )
