@@ -118,3 +118,18 @@ Tambem e possivel sobrescrever `nfe_step` no JSON.
 ## Observacao de CPU Basic
 
 CPU Basic deve funcionar para validar a API, mas F5-TTS em CPU pode ser lento, especialmente no primeiro boot, porque baixa checkpoint grande, carrega modelo e pode baixar/carregar vocoder. Para uso real com extensao, o proximo passo recomendado e trocar o hardware do Space para uma GPU NVIDIA pequena.
+
+## Plano de migracao para GPU
+
+O plano documentado para sair do CPU Basic esta em:
+
+`MIGRACAO_MODAL_GPU.md`
+
+Resumo:
+
+- Manter este Hugging Face Space como referencia funcional atual.
+- Migrar a inferencia para Modal Starter usando credito mensal gratuito de compute, se disponivel na conta.
+- Comecar com GPU pequena, preferencialmente `T4` ou `L4`, para validar custo, latencia e qualidade.
+- Depois apontar a extensao para o novo endpoint Modal ou usar o Space como proxy.
+
+Observacao tecnica: chiados/estouros nao sao necessariamente causados apenas por CPU. Tambem podem vir de referencia de audio, preprocessamento do `ref_text`, vocoder, checkpoint, parametros `nfe_step/speed` ou clipping no WAV. A GPU e recomendada principalmente para reduzir latencia e permitir testes de qualidade com mais folga.
