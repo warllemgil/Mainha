@@ -1,7 +1,6 @@
 import logging
 import os
 from pathlib import Path
-from threading import Thread
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -69,20 +68,25 @@ def require_api_token(
 @app.on_event("startup")
 def startup() -> None:
     LOGGER.info("Iniciando SuperVoz F5 API com %s voz(es)", len(voices))
-    for config in voices.values():
+    if env_flag("SUPERVOZ_STARTUP_DIAGNOSTIC", default=False):
+        for config in voices.values():
+            try:
+                LOGGER.info("Diagnostico de voz %s: %s", config.voice_id, diagnose_config(config))
+            except Exception as exc:
+                LOGGER.warning("Diagnostico de voz falhou para %s: %s", config.voice_id, exc)
+
+    if env_flag("SUPERVOZ_PRELOAD_ON_STARTUP", default=False):
         try:
-            LOGGER.info("Diagnostico de voz %s: %s", config.voice_id, diagnose_config(config))
-        except Exception as exc:
-            LOGGER.warning("Diagnostico de voz falhou para %s: %s", config.voice_id, exc)
-
-    Thread(target=preload_voices, name="supervoz-preload", daemon=True).start()
+            engine.preload(voices)
+        except Exception:
+            LOGGER.exception("Falha no preload. O /tts tentara carregar sob demanda.")
 
 
-def preload_voices() -> None:
-    try:
-        engine.preload(voices)
-    except Exception:
-        LOGGER.exception("Falha no preload. O /health continua online; /tts tentara carregar sob demanda.")
+def env_flag(name: str, *, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on", "sim"}
 
 
 @app.get("/health", dependencies=[Depends(require_api_token)])
@@ -93,6 +97,7 @@ def health() -> dict:
         "model_loaded": engine.model_loaded,
         "space": "running",
         "auth_enabled": bool(os.getenv("API_AUTH_TOKEN", "").strip()),
+        "preload_on_startup": env_flag("SUPERVOZ_PRELOAD_ON_STARTUP", default=False),
     }
 
 

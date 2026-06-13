@@ -28,7 +28,7 @@ Foi adicionado cache em memória para áudios SuperVoz já gerados:
 - `audioFetchesEmAndamento`: evita duas chamadas simultâneas para o mesmo texto/configuração.
 - A chave do cache considera texto, voz, velocidade, modo e `nfe_step`.
 - Ao voltar para um bloco já gerado durante a mesma sessão da página, a extensão toca o áudio em cache sem chamar `/tts` novamente.
-- Enquanto um bloco SuperVoz começa a tocar, a extensão tenta pré-carregar o próximo bloco em segundo plano.
+- O pré-carregamento automático do próximo bloco fica desativado para evitar chamadas Modal que o usuário talvez não escute.
 
 Limitação: esse cache é em memória. Ao recarregar a página ou reiniciar o navegador, os áudios precisam ser gerados de novo.
 
@@ -57,7 +57,8 @@ Limitação: esse cache é em memória. Ao recarregar a página ou reiniciar o n
 ✅ Seleção de Voz Neural priorizada (Edge Natural / Google Premium).
 ✅ SuperVoz F5 opcional com fallback para voz nativa.
 ✅ URL da API SuperVoz configurável para alternar entre Hugging Face Space e Modal GPU.
-✅ Cache em memória e pré-carregamento do próximo bloco para reduzir esperas repetidas.
+✅ Cache em memória para reaproveitar áudios já gerados na mesma sessão.
+✅ Pré-carregamento automático do próximo bloco desativado para evitar custo antes do usuário ouvir o texto.
 
 ## Próximas Etapas
 

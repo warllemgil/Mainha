@@ -443,19 +443,8 @@
   }
 
   function preCarregarProximoBloco(){
-    if (leitorSettings.leitorTtsProvider !== 'supervoz') return;
-    if (!leitorSettings.leitorHfToken) return;
-    if (!blocos || indiceAtual + 1 >= blocos.length) return;
-
-    const proximoBloco = blocos[indiceAtual + 1];
-    if (!proximoBloco || !proximoBloco.texto) return;
-
-    const chave = chaveCacheSuperVoz(proximoBloco.texto);
-    if (audioCache.has(chave) || audioFetchesEmAndamento.has(chave)) return;
-
-    buscarAudioSuperVoz(proximoBloco)
-      .then(() => log('SuperVoz proximo bloco em cache'))
-      .catch((err) => log('preload SuperVoz falhou', err && err.message ? err.message : err));
+    // Mantido desativado para evitar chamadas Modal antes do usuario realmente ouvir o bloco.
+    return;
   }
 
   function limparDestaques(){
@@ -680,6 +669,8 @@
 
   // Pedir aos iframes caso eles já existam
   setTimeout(solicitarAosIframes, 2000);
+  window.addEventListener('pagehide', pararLeitura);
+  window.addEventListener('beforeunload', pararLeitura);
 
   carregarConfiguracoes();
   atualizarUI();

@@ -27,6 +27,8 @@ image = (
             "SUPERVOZ_CACHE_DIR": CACHE_DIR,
             "SUPERVOZ_OUTPUT_DIR": f"{CACHE_DIR}/outputs",
             "SUPERVOZ_LOG_DIR": f"{CACHE_DIR}/logs",
+            "SUPERVOZ_PRELOAD_ON_STARTUP": "false",
+            "SUPERVOZ_STARTUP_DIAGNOSTIC": "false",
         }
     )
 )
@@ -39,7 +41,7 @@ secrets = [modal.Secret.from_name("supervoz-f5-secrets")]
 @app.function(
     gpu=GPU_TYPE,
     timeout=900,
-    scaledown_window=300,
+    scaledown_window=5,
     volumes={CACHE_DIR: cache_volume},
     secrets=secrets,
 )

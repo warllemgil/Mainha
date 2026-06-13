@@ -200,6 +200,11 @@ O app usa:
 - cache: `/cache`;
 - outputs: `/cache/outputs`;
 - logs: `/cache/logs`.
+- preload no startup: desativado;
+- diagnostico remoto no startup: desativado;
+- `scaledown_window`: `5` segundos para reduzir tempo ocioso cobravel.
+
+Para economizar credito, evite usar `Testar conexao` repetidamente. A extensao so deve chamar `POST /tts` quando o usuario clicar Play com `SuperVoz F5` selecionado. Ao clicar Stop ou fechar a pagina, a extensao aborta a chamada local; o container Modal encerra apos ficar ocioso.
 
 ## Melhorias de audio a testar junto com GPU
 

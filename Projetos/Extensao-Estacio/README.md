@@ -83,7 +83,9 @@ speechSynthesis.getVoices()
 Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usar Francisca automaticamente.
 
 ### Integrar com API TTS Customizada
-Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API e o token Bearer, salve e teste a conexão. Em CPU Basic, use `fast` e `nfe_step=8` para reduzir a latência. Em Modal GPU, comece com `balanced` e `nfe_step=32`.
+Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API no campo `URL da API SuperVoz` e o token Bearer, depois salve. Em CPU Basic, use `fast` e `nfe_step=8` para reduzir a latência. Em Modal GPU, comece com `balanced` e `nfe_step=32`.
+
+Para economizar credito no Modal, a extensao nao pre-carrega o proximo bloco automaticamente. Ela chama `/tts` somente durante a leitura. O botao `Testar conexao` chama `/health`; use apenas quando precisar conferir a configuracao.
 
 ## 🐛 Troubleshooting
 

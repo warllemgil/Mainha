@@ -131,6 +131,7 @@ Implementacao inicial adicionada em 2026-06-13:
 - `requirements-modal.txt`: dependencias do container Modal sem reinstalar `torch` CPU por cima do PyTorch CUDA.
 - `app.py`: aceita `API_AUTH_TOKEN` opcional via Bearer token e usa diretorios configuraveis para log/cache/output.
 - Extensao Estacio: popup agora aceita `URL da API SuperVoz`, permitindo trocar do Space para o endpoint Modal sem editar codigo.
+- Economia de credito: no Modal, `SUPERVOZ_PRELOAD_ON_STARTUP=false`, `SUPERVOZ_STARTUP_DIAGNOSTIC=false` e `scaledown_window=5`. O modelo so e carregado em `POST /tts`, nao no boot nem em `/health`.
 
 Comandos esperados apos autenticar o CLI do Modal:
 
@@ -141,6 +142,8 @@ modal deploy modal_app.py
 ```
 
 Depois do deploy, copie a URL `https://...modal.run`, abra o popup da extensao, cole em `URL da API SuperVoz`, informe o mesmo `API_AUTH_TOKEN`, salve e teste a conexao.
+
+Observacao: clicar em `Testar conexao` chama `/health` e pode acordar o container por alguns segundos, mas nao carrega o modelo. Para nao acordar o Modal antes da leitura, apenas salve a URL/token e clique Play na aula.
 
 Resumo:
 
