@@ -11,7 +11,7 @@ import requests
 
 LOGGER = logging.getLogger("supervoz.voice_manager")
 PROJECT_ROOT = Path(__file__).resolve().parent
-CACHE_DIR = PROJECT_ROOT / "cache"
+CACHE_DIR = Path(os.getenv("SUPERVOZ_CACHE_DIR", PROJECT_ROOT / "cache"))
 VOICES_FILE = PROJECT_ROOT / "voices.json"
 
 

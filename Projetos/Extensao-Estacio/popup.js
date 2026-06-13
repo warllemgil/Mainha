@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const openExtensionSettings = document.getElementById('openExtensionSettings');
   const openDocs = document.getElementById('openDocs');
   const ttsProvider = document.getElementById('ttsProvider');
+  const supervozApiUrl = document.getElementById('supervozApiUrl');
   const hfToken = document.getElementById('hfToken');
   const supervozMode = document.getElementById('supervozMode');
   const supervozNfeStep = document.getElementById('supervozNfeStep');
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'native',
+    leitorSupervozApiUrl: 'https://warllem-supervoz-f5-api.hf.space',
     leitorHfToken: '',
     leitorSupervozMode: 'fast',
     leitorSupervozNfeStep: 8
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   chrome.storage.local.get(DEFAULT_SETTINGS, (items) => {
     ttsProvider.value = items.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
+    supervozApiUrl.value = items.leitorSupervozApiUrl || DEFAULT_SETTINGS.leitorSupervozApiUrl;
     hfToken.value = items.leitorHfToken || '';
     supervozMode.value = items.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
     supervozNfeStep.value = String(items.leitorSupervozNfeStep || DEFAULT_SETTINGS.leitorSupervozNfeStep);
@@ -50,25 +53,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfeStep = Math.max(4, Math.min(64, Number(supervozNfeStep.value) || 8));
     chrome.storage.local.set({
       leitorTtsProvider: ttsProvider.value,
+      leitorSupervozApiUrl: normalizeApiUrl(supervozApiUrl.value),
       leitorHfToken: hfToken.value.trim(),
       leitorSupervozMode: supervozMode.value,
       leitorSupervozNfeStep: nfeStep
     }, () => {
       supervozNfeStep.value = String(nfeStep);
+      supervozApiUrl.value = normalizeApiUrl(supervozApiUrl.value);
       setStatus('Configuração salva.');
     });
   });
 
   testSupervoz.addEventListener('click', async () => {
+    const apiUrl = normalizeApiUrl(supervozApiUrl.value);
     const token = hfToken.value.trim();
     if (!token) {
-      setStatus('Informe o HF_TOKEN antes de testar.', true);
+      setStatus('Informe o token da API antes de testar.', true);
       return;
     }
 
     setStatus('Testando...');
     try {
-      const response = await fetch('https://warllem-supervoz-f5-api.hf.space/health', {
+      const response = await fetch(`${apiUrl}/health`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -80,6 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus(`Falha: ${error.message}`, true);
     }
   });
+
+  function normalizeApiUrl(value) {
+    const fallback = DEFAULT_SETTINGS.leitorSupervozApiUrl;
+    const raw = (value || fallback).trim() || fallback;
+    return raw.replace(/\/+$/, '').replace(/\/tts$/, '');
+  }
 
   console.log('[Popup] Leitor Estácio carregado');
 });

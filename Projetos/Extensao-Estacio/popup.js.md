@@ -13,6 +13,7 @@ Controla a tela que abre ao clicar no ícone da extensão.
 - Carrega configurações salvas em `chrome.storage.local`.
 - Salva:
   - `leitorTtsProvider`
+  - `leitorSupervozApiUrl`
   - `leitorHfToken`
   - `leitorSupervozMode`
   - `leitorSupervozNfeStep`
@@ -22,7 +23,8 @@ Controla a tela que abre ao clicar no ícone da extensão.
 GET https://warllem-supervoz-f5-api.hf.space/health
 ```
 
+Ou `GET {leitorSupervozApiUrl}/health`, quando a URL for trocada para Modal GPU.
+
 ## Segurança
 
 O `HF_TOKEN` não fica salvo no código. Ele é digitado no popup e persistido localmente no navegador via `chrome.storage.local`.
-

@@ -13,6 +13,7 @@ O arquivo agora suporta dois motores de voz:
 As configurações vêm de `chrome.storage.local`:
 
 - `leitorTtsProvider`: `native` ou `supervoz`.
+- `leitorSupervozApiUrl`: URL base da API SuperVoz. Padrao: `https://warllem-supervoz-f5-api.hf.space`.
 - `leitorHfToken`: token usado no header `Authorization: Bearer ...`.
 - `leitorSupervozMode`: `fast`, `balanced` ou `quality`.
 - `leitorSupervozNfeStep`: valor numérico enviado ao servidor.
@@ -55,6 +56,7 @@ Limitação: esse cache é em memória. Ao recarregar a página ou reiniciar o n
 ✅ Problema de blocos repetidos corrigido (filtragem de elementos filhos).
 ✅ Seleção de Voz Neural priorizada (Edge Natural / Google Premium).
 ✅ SuperVoz F5 opcional com fallback para voz nativa.
+✅ URL da API SuperVoz configurável para alternar entre Hugging Face Space e Modal GPU.
 ✅ Cache em memória e pré-carregamento do próximo bloco para reduzir esperas repetidas.
 
 ## Próximas Etapas

@@ -1,10 +1,12 @@
 import logging
+import os
 from pathlib import Path
 from threading import Thread
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from f5_engine import F5Engine
@@ -12,7 +14,7 @@ from voice_manager import diagnose_config, load_voices, public_voice_info
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-LOG_DIR = PROJECT_ROOT / "cache" / "logs"
+LOG_DIR = Path(os.getenv("SUPERVOZ_LOG_DIR", PROJECT_ROOT / "cache" / "logs"))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
@@ -33,6 +35,7 @@ app.add_middleware(
 
 voices = load_voices()
 engine = F5Engine()
+auth_scheme = HTTPBearer(auto_error=False)
 
 
 class TTSRequest(BaseModel):
@@ -41,6 +44,26 @@ class TTSRequest(BaseModel):
     speed: float | None = Field(default=None, gt=0.2, le=2.5)
     mode: str = Field(default="balanced", pattern="^(fast|balanced|quality)$")
     nfe_step: int | None = Field(default=None, ge=4, le=64)
+
+
+def require_api_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(auth_scheme),
+) -> None:
+    expected_token = os.getenv("API_AUTH_TOKEN", "").strip()
+    if not expected_token:
+        return
+
+    if request.method == "OPTIONS":
+        return
+
+    token = credentials.credentials if credentials else ""
+    if token != expected_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de API invalido.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 @app.on_event("startup")
@@ -62,22 +85,23 @@ def preload_voices() -> None:
         LOGGER.exception("Falha no preload. O /health continua online; /tts tentara carregar sob demanda.")
 
 
-@app.get("/health")
+@app.get("/health", dependencies=[Depends(require_api_token)])
 def health() -> dict:
     return {
         "status": "ok",
         "device": engine.device,
         "model_loaded": engine.model_loaded,
         "space": "running",
+        "auth_enabled": bool(os.getenv("API_AUTH_TOKEN", "").strip()),
     }
 
 
-@app.get("/voices")
+@app.get("/voices", dependencies=[Depends(require_api_token)])
 def list_voices() -> dict:
     return {"voices": [public_voice_info(config) for config in voices.values()]}
 
 
-@app.post("/tts")
+@app.post("/tts", dependencies=[Depends(require_api_token)])
 def tts(request: TTSRequest) -> FileResponse:
     config = voices.get(request.voice)
     if config is None:

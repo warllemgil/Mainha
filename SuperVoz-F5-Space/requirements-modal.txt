@@ -1,0 +1,7 @@
+fastapi[standard]>=0.115.0
+pydantic>=2.7.0
+huggingface_hub>=0.25.0
+requests>=2.32.0
+soundfile>=0.12.1
+numpy>=1.26.0
+f5-tts

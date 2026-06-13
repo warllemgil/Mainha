@@ -144,9 +144,10 @@
   let velocidadeIndex = 1;
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
-  const SUPERVOZ_API_URL = 'https://warllem-supervoz-f5-api.hf.space/tts';
+  const DEFAULT_SUPERVOZ_API_URL = 'https://warllem-supervoz-f5-api.hf.space';
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'native',
+    leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
     leitorHfToken: '',
     leitorSupervozMode: 'fast',
     leitorSupervozNfeStep: 8
@@ -373,12 +374,18 @@
 
   function chaveCacheSuperVoz(texto){
     return JSON.stringify({
+      api_url: normalizarSupervozApiBaseUrl(),
       voice: 'warllem',
       text: texto,
       speed: velocidades[velocidadeIndex] || 1.0,
       mode: leitorSettings.leitorSupervozMode || 'fast',
       nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
     });
+  }
+
+  function normalizarSupervozApiBaseUrl(){
+    const configuredUrl = (leitorSettings.leitorSupervozApiUrl || DEFAULT_SUPERVOZ_API_URL).trim();
+    return configuredUrl.replace(/\/+$/, '').replace(/\/tts$/, '');
   }
 
   function salvarAudioNoCache(chave, blob){
@@ -406,7 +413,7 @@
       return fetchExistente;
     }
 
-    const requestPromise = fetch(SUPERVOZ_API_URL, {
+    const requestPromise = fetch(`${normalizarSupervozApiBaseUrl()}/tts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

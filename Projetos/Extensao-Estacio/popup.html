@@ -238,8 +238,12 @@
         </select>
       </label>
       <label>
-        HF_TOKEN para Space privado
-        <input id="hfToken" type="password" placeholder="hf_..." autocomplete="off">
+        URL da API SuperVoz
+        <input id="supervozApiUrl" type="url" placeholder="https://...modal.run" autocomplete="off">
+      </label>
+      <label>
+        Token da API
+        <input id="hfToken" type="password" placeholder="Bearer token" autocomplete="off">
       </label>
       <div class="settings-row">
         <label>
@@ -256,7 +260,7 @@
         </label>
       </div>
       <div class="hint">
-        Use fast + NFE 8 em CPU Basic. O token fica salvo somente no armazenamento local do Chrome.
+        Use a URL base, sem /tts. Em Modal GPU, comece com balanced + NFE 32. O token fica salvo somente no armazenamento local do Chrome.
       </div>
       <button class="btn-primary" id="saveSettings">Salvar voz</button>
       <button class="btn-secondary" id="testSupervoz">Testar conexão</button>

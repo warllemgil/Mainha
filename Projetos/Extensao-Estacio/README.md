@@ -7,6 +7,7 @@ Extensão Chrome que lê automaticamente o conteúdo de aulas da Estácio em voz
 - ✅ **SuperVoz F5 opcional** — Pode usar a API `https://warllem-supervoz-f5-api.hf.space/tts`.
 - ✅ **Fallback seguro** — Se a SuperVoz falhar ou não houver `HF_TOKEN`, usa a voz nativa do navegador.
 - ✅ **Configuração no popup** — Salva motor de voz, `HF_TOKEN`, modo e `nfe_step` em `chrome.storage.local`.
+- ✅ **URL SuperVoz configurável** — Permite apontar para o Hugging Face Space ou para o novo endpoint Modal GPU.
 - ✅ **Token fora do código** — O token não fica hardcoded nos arquivos da extensão.
 - ✅ **Permissão do Space** — `manifest.json` agora permite chamadas ao Hugging Face Space.
 
@@ -82,7 +83,7 @@ speechSynthesis.getVoices()
 Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usar Francisca automaticamente.
 
 ### Integrar com API TTS Customizada
-Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe o `HF_TOKEN`, salve e teste a conexão. Em CPU Basic, use `fast` e `nfe_step=8` para reduzir a latência.
+Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API e o token Bearer, salve e teste a conexão. Em CPU Basic, use `fast` e `nfe_step=8` para reduzir a latência. Em Modal GPU, comece com `balanced` e `nfe_step=32`.
 
 ## 🐛 Troubleshooting
 

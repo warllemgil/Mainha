@@ -107,6 +107,8 @@ Recomendacao inicial: Opcao A para validar GPU rapidamente. Depois decidir se va
 
 ## Etapas de implementacao
 
+Status em 2026-06-13: a base de codigo para deploy Modal foi adicionada em `modal_app.py`; ainda depende de conta Modal autenticada, billing/budget configurado e secrets criados fora do repositorio.
+
 1. Criar conta/projeto Modal.
 2. Configurar billing/budget baixo para evitar gasto inesperado.
 3. Criar secrets no Modal:
@@ -116,12 +118,24 @@ HF_TOKEN
 API_AUTH_TOKEN
 ```
 
-4. Criar endpoint FastAPI ou `modal.web_endpoint` com:
+Comando sugerido:
+
+```bash
+modal secret create supervoz-f5-secrets HF_TOKEN=SEU_HF_TOKEN API_AUTH_TOKEN=SEU_TOKEN_DA_API
+```
+
+4. Criar endpoint FastAPI/ASGI Modal com:
 
 ```text
 GET /health
 GET /voices
 POST /tts
+```
+
+Implementado em:
+
+```text
+SuperVoz-F5-Space/modal_app.py
 ```
 
 5. Reaproveitar a logica atual:
@@ -160,6 +174,33 @@ POST /tts
 
 10. Atualizar a extensao para aceitar `TTS API URL` configuravel ou trocar a constante atual.
 
+Status: implementado no popup da extensao como `URL da API SuperVoz`. O valor padrao continua apontando para o Hugging Face Space, e o novo endpoint Modal pode ser colado sem editar `content.js`.
+
+## Comandos de deploy Modal
+
+Depois de configurar conta, billing e secrets:
+
+```bash
+cd SuperVoz-F5-Space
+modal deploy modal_app.py
+```
+
+Para teste temporario antes do deploy persistente:
+
+```bash
+cd SuperVoz-F5-Space
+modal serve modal_app.py
+```
+
+O app usa:
+
+- GPU: `T4`;
+- volume: `supervoz-f5-cache`;
+- secret: `supervoz-f5-secrets`;
+- cache: `/cache`;
+- outputs: `/cache/outputs`;
+- logs: `/cache/logs`.
+
 ## Melhorias de audio a testar junto com GPU
 
 Antes de concluir que a GPU resolveu tudo, testar:
@@ -189,4 +230,3 @@ A migracao para Modal GPU pode ser considerada bem-sucedida quando:
 - Nao criar Alexa/Home Assistant.
 - Nao remover o Hugging Face Space ainda.
 - Nao colocar tokens no codigo.
-

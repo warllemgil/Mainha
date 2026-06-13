@@ -28,6 +28,16 @@
 ```
 
 ## Status de Iframes Cross-Origin
+
+## Alteração 2026-06-13 — Modal GPU
+
+Adicionada permissão:
+
+```json
+"https://*.modal.run/*"
+```
+
+Motivo: permitir que a extensão chame o endpoint SuperVoz F5 hospedado no Modal GPU quando a URL for configurada no popup.
 - ✅ Manifest injeta em `all_frames`
 - ✅ `content.js` detecta `window !== window.top`
 - ❌ **Não conseguimos acessar DOM do iframe externo** (Azure)

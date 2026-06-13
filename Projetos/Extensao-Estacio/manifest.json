@@ -9,7 +9,8 @@
     "*://*.estacioprd.net/*",
     "*://stecine.azureedge.net/*",
     "*://*.ensineme.com.br/*",
-    "https://warllem-supervoz-f5-api.hf.space/*"
+    "https://warllem-supervoz-f5-api.hf.space/*",
+    "https://*.modal.run/*"
   ],
   "background": {
     "service_worker": "background.js"

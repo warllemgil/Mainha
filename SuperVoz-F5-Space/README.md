@@ -125,6 +125,23 @@ O plano documentado para sair do CPU Basic esta em:
 
 `MIGRACAO_MODAL_GPU.md`
 
+Implementacao inicial adicionada em 2026-06-13:
+
+- `modal_app.py`: app Modal ASGI com GPU `T4`, volume persistente `supervoz-f5-cache` e secret `supervoz-f5-secrets`.
+- `requirements-modal.txt`: dependencias do container Modal sem reinstalar `torch` CPU por cima do PyTorch CUDA.
+- `app.py`: aceita `API_AUTH_TOKEN` opcional via Bearer token e usa diretorios configuraveis para log/cache/output.
+- Extensao Estacio: popup agora aceita `URL da API SuperVoz`, permitindo trocar do Space para o endpoint Modal sem editar codigo.
+
+Comandos esperados apos autenticar o CLI do Modal:
+
+```bash
+cd SuperVoz-F5-Space
+modal secret create supervoz-f5-secrets HF_TOKEN=SEU_HF_TOKEN API_AUTH_TOKEN=SEU_TOKEN_DA_API
+modal deploy modal_app.py
+```
+
+Depois do deploy, copie a URL `https://...modal.run`, abra o popup da extensao, cole em `URL da API SuperVoz`, informe o mesmo `API_AUTH_TOKEN`, salve e teste a conexao.
+
 Resumo:
 
 - Manter este Hugging Face Space como referencia funcional atual.

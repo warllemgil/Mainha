@@ -8,6 +8,7 @@
 - Botões: "Configurações" e "Ajuda"
 - Painel "Motor de voz"
 - Campo `HF_TOKEN`
+- Campo `URL da API SuperVoz`
 - Seletor `Nativa do navegador` / `SuperVoz F5`
 - Seletor de modo `fast`, `balanced`, `quality`
 - Campo `NFE`
@@ -16,6 +17,7 @@
 ## Status
 ✅ Funcional
 ✅ Configura SuperVoz sem hardcodar token no código
+✅ Permite trocar o endpoint para Modal GPU sem editar código
 ⚠️ O token fica no `chrome.storage.local`, adequado para uso pessoal/local
 
 ## Próximas Melhorias

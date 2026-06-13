@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import time
 from dataclasses import dataclass
@@ -12,7 +13,7 @@ from voice_manager import ResolvedVoice, VoiceConfig, resolve_voice
 
 LOGGER = logging.getLogger("supervoz.f5_engine")
 PROJECT_ROOT = Path(__file__).resolve().parent
-OUTPUT_DIR = PROJECT_ROOT / "outputs"
+OUTPUT_DIR = Path(os.getenv("SUPERVOZ_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
 
 MODE_NFE = {
     "fast": {"cpu": 8, "cuda": 16},
