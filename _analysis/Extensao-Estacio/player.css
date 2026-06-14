@@ -1,0 +1,186 @@
+/* ========================================
+   Leitor Estácio — Player Flutuante
+   ======================================== */
+
+#leitor-estacio-player {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a2e;
+  border: 1px solid rgba(99, 179, 237, 0.25);
+  border-radius: 56px;
+  padding: 10px 14px 10px 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+  transition: box-shadow 0.2s;
+  min-width: 280px;
+  flex-wrap: wrap;
+}
+
+#leitor-estacio-player:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(99,179,237,0.2);
+}
+
+/* Botão play/pause principal */
+#leitor-btn-play {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: #0a0a1a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, opacity 0.15s;
+  font-size: 18px;
+  box-shadow: 0 2px 12px rgba(79, 172, 254, 0.4);
+}
+
+#leitor-btn-play:hover {
+  transform: scale(1.08);
+  opacity: 0.92;
+}
+
+#leitor-btn-play:active {
+  transform: scale(0.96);
+}
+
+/* Botões de navegação (prev/next/reload) */
+.leitor-nav-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  font-size: 12px;
+  padding: 0;
+}
+
+.leitor-nav-button:hover {
+  background: rgba(79, 172, 254, 0.2);
+  color: #63b3ed;
+  border-color: rgba(99,179,237,0.3);
+}
+
+.leitor-nav-button:active {
+  transform: scale(0.92);
+}
+
+/* Botão parar */
+#leitor-btn-stop {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  font-size: 12px;
+}
+
+#leitor-btn-stop:hover {
+  background: rgba(255, 100, 100, 0.2);
+  color: #ff8080;
+  border-color: rgba(255,100,100,0.3);
+}
+
+/* Info central */
+#leitor-info {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#leitor-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: #63b3ed;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#leitor-progresso {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+}
+
+/* Barra de progresso */
+#leitor-barra-wrap {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+#leitor-barra {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  border-radius: 2px;
+  transition: width 0.3s linear;
+}
+
+/* Controle de velocidade */
+#leitor-velocidade {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+#leitor-velocidade:hover {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Destaque na palavra sendo lida */
+.leitor-highlight {
+  background: rgba(79, 172, 254, 0.3) !important;
+  border-radius: 3px;
+  outline: 1px solid rgba(79, 172, 254, 0.5);
+  transition: background 0.1s;
+}
+
+/* Parágrafo atual sendo lido */
+.leitor-paragrafo-ativo {
+  background: rgba(79, 172, 254, 0.06) !important;
+  border-left: 3px solid rgba(79, 172, 254, 0.5) !important;
+  padding-left: 8px !important;
+  border-radius: 2px;
+  transition: all 0.2s;
+}

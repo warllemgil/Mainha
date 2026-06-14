@@ -1,0 +1,35 @@
+🔍 INICIANDO ANÁLISE DETALHADA...
+
+VM436:6 📌 IFRAMES ENCONTRADOS: 2
+VM436:9 
+   Iframe #1:
+VM436:10    - src: https://conteudo.ensineme.com.br/en/00939?brand=estacio
+VM436:11    - title: REPRESENTAÇÃO GRÁFICA DE PEÇAS MECÂNICAS SIMPLES
+VM436:12    - class: css-1s7xrvq e7pmo870
+VM436:20    - ❌ NÃO ACESSÍVEL (cross-origin)
+VM436:9 
+   Iframe #2:
+VM436:10    - src: about:blank
+VM436:11    - title: _hjSafeContext
+VM436:12    - class: (sem classe)
+VM436:16    - ✅ ACESSÍVEL (same-origin)
+VM436:17    - texto encontrado: 0 chars
+VM436:24 
+📌 CONTENEDORES PRINCIPAIS:
+VM436:28 ✅ #root → 1 encontrado(s), 123 chars
+VM436:28 ✅ main → 1 encontrado(s), 88 chars
+VM436:32 
+📌 PRIMEIRAS CLASSES/IDS RELEVANTES:
+VM436:49 
+📌 ESTRUTURA DO #root (se existir):
+VM436:51 <div id="root">
+VM436:54   <nav class="sc-eFWClz hVsekf">
+VM436:54   <main class="sc-gAsffP juFGBb">
+VM436:54   <section class="sc-dYzkwA lajGaF">
+VM436:56 </div>
+VM436:61 
+============================================================
+VM436:62 ✅ ANÁLISE CONCLUÍDA
+VM436:63 ============================================================
+VM436:64 
+👉 Descreva o que você vê acima para eu refatorar o código!

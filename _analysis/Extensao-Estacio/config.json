@@ -1,0 +1,19 @@
+models:
+  - title: "Gemma 2 9b (Groq)"
+    provider: "groq"
+    model: "gemma2-9b-it"
+    apiKey: "gsk_BwtiYjj3P9xRjwZPMbNzWGdyb3FY9yconxbOUnBP9snTNQN"
+  - title: "Qwen 2.5 Coder 32b (Groq)"
+    provider: "groq"
+    model: "qwen-2.5-coder-32b"
+    apiKey: "gsk_BwtiYjj3P9xRjwZPMbNzWGdyb3FY9yconxbOUnBP9snTNQN"
+  - title: "DeepSeek Coder"
+    provider: "deepseek"
+    model: "deepseek-coder"
+    apiKey: "sk-357956d814f7400e85c99ea61dccd73a"
+
+tabAutocompleteModel:
+  title: "Gemma 2 9b (Groq)"
+  provider: "groq"
+  model: "gemma2-9b-it"
+  apiKey: "gsk_BwtiYjj3P9xRjwZPMbNzWGdyb3FY9yconxbOUnBP9snTNQN"

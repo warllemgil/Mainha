@@ -1,0 +1,169 @@
+// ===============================================
+// ANÁLISE PROFUNDA DE IFRAMES + ESTRATÉGIAS
+// Execute no console da página Estácio
+// ===============================================
+(async function ANALISE_COMPLETA_IFRAMES() {
+  console.clear();
+  console.log('🔍 ANÁLISE COMPLETA — Estratégias de Extração de Iframes');
+  console.log('='.repeat(85));
+
+  const RESULTADO = {
+    timestamp: new Date().toISOString(),
+    url: window.location.href,
+    iframes: [],
+    estrategias_testadas: {}
+  };
+
+  // ============= 1. DETECTAR IFRAMES =============
+  console.log('\n📌 IFRAMES DETECTADOS:');
+  const iframes = document.querySelectorAll('iframe');
+  console.log(`Total: ${iframes.length}\n`);
+
+  for (let i = 0; i < iframes.length; i++) {
+    const iframe = iframes[i];
+    const info = {
+      numero: i + 1,
+      src: iframe.src,
+      id: iframe.id || 'N/A',
+      title: iframe.title || 'N/A',
+      class: iframe.className,
+      width: iframe.width,
+      height: iframe.height,
+      visivel: iframe.offsetHeight > 0 && iframe.offsetWidth > 0,
+      acessivel_same_origin: false,
+      postMessage_respondeu: false,
+      tamanho_texto_sameorigin: 0,
+      elementos: {
+        paragrafos: 0,
+        headings: 0,
+        listas: 0
+      },
+      erro_sameorigin: null,
+      estrategia_recomendada: null
+    };
+
+    console.group(`[${i + 1}] ${iframe.src.substring(0, 80)}`);
+
+    // ============= ESTRATÉGIA 1: Same-origin access =============
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc && doc.body) {
+        info.acessivel_same_origin = true;
+        console.log('✅ ACESSÍVEL (same-origin)');
+        
+        const bodyText = doc.body.innerText || '';
+        info.tamanho_texto_sameorigin = bodyText.length;
+        
+        info.elementos.paragrafos = doc.querySelectorAll('p').length;
+        info.elementos.headings = doc.querySelectorAll('h1,h2,h3,h4,h5,h6').length;
+        info.elementos.listas = doc.querySelectorAll('li').length;
+
+        console.log(`   Caracteres: ${bodyText.length}`);
+        console.log(`   Parágrafos: ${info.elementos.paragrafos}`);
+        console.log(`   Headings: ${info.elementos.headings}`);
+        console.log(`   Listas: ${info.elementos.listas}`);
+
+        const preview = bodyText.substring(0, 100).replace(/\n/g, ' ');
+        console.log(`   Preview: "${preview}..."`);
+
+        info.estrategia_recomendada = 'contentDocument (same-origin)';
+      }
+    } catch (e) {
+      info.erro_sameorigin = e.message;
+      console.log(`❌ BLOQUEADO (cross-origin): ${e.message}`);
+    }
+
+    // ============= ESTRATÉGIA 2: postMessage =============
+    if (!info.acessivel_same_origin && iframe.src && !iframe.src.includes('about:blank')) {
+      console.log('🔄 Testando postMessage...');
+      
+      // listener temporário
+      const responsePromise = new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(null), 2000);
+        
+        const listener = (e) => {
+          if (e.data && e.data.type === 'leitor-estacio:content') {
+            clearTimeout(timeout);
+            window.removeEventListener('message', listener);
+            resolve(e.data.text);
+          }
+        };
+        
+        window.addEventListener('message', listener);
+        
+        // enviar requisição
+        try {
+          iframe.contentWindow.postMessage(
+            { type: 'leitor-estacio:request-content' },
+            '*'
+          );
+        } catch (err) {
+          clearTimeout(timeout);
+          resolve(null);
+        }
+      });
+
+      const response = await responsePromise;
+      if (response) {
+        info.postMessage_respondeu = true;
+        const texts = Array.isArray(response) ? response : [response];
+        const totalChars = texts.join('\n').length;
+        console.log(`   ✅ postMessage funcionou: ${texts.length} blocos, ${totalChars} chars`);
+        info.estrategia_recomendada = 'postMessage';
+      } else {
+        console.log(`   ❌ postMessage timeout (2s)`);
+      }
+    }
+
+    // Info visual
+    console.log(`   Visível: ${info.visivel ? 'SIM' : 'NÃO'}`);
+    console.log(`   Dimensões: ${info.width}×${info.height}`);
+
+    console.groupEnd();
+    RESULTADO.iframes.push(info);
+  }
+
+  // ============= 2. RESUMO =============
+  console.log('\n' + '='.repeat(85));
+  console.log('📊 RESUMO:');
+  console.log(`   Total iframes: ${iframes.length}`);
+  console.log(`   Same-origin acessíveis: ${RESULTADO.iframes.filter(i => i.acessivel_same_origin).length}`);
+  console.log(`   Cross-origin bloqueados: ${RESULTADO.iframes.filter(i => !i.acessivel_same_origin).length}`);
+  console.log(`   Respondendo via postMessage: ${RESULTADO.iframes.filter(i => i.postMessage_respondeu).length}`);
+
+  // ============= 3. RECOMENDAÇÕES =============
+  console.log('\n' + '='.repeat(85));
+  console.log('💡 ESTRATÉGIAS RECOMENDADAS:');
+
+  const sameOriginAcessivel = RESULTADO.iframes.find(i => i.acessivel_same_origin && i.tamanho_texto_sameorigin > 100);
+  const comPostMessage = RESULTADO.iframes.find(i => i.postMessage_respondeu);
+  const bloqueado = RESULTADO.iframes.find(i => !i.acessivel_same_origin && !i.postMessage_respondeu && i.src && !i.src.includes('about:blank'));
+
+  if (sameOriginAcessivel) {
+    console.log(`\n✅ PRIORIDADE 1: iframe same-origin (#${sameOriginAcessivel.numero})`);
+    console.log(`   src: ${sameOriginAcessivel.src}`);
+    console.log(`   Conteúdo: ${sameOriginAcessivel.tamanho_texto_sameorigin} chars`);
+    console.log(`   Ação: Usar contentDocument diretamente em content.js`);
+  }
+
+  if (comPostMessage) {
+    console.log(`\n✅ PRIORIDADE 2: iframe com postMessage (#${comPostMessage.numero})`);
+    console.log(`   src: ${comPostMessage.src}`);
+    console.log(`   Ação: Enviar postMessage de content.js, iframe responde com conteúdo`);
+  }
+
+  if (bloqueado) {
+    console.log(`\n⚠️ PRIORIDADE 3: iframe bloqueado (#${bloqueado.numero})`);
+    console.log(`   src: ${bloqueado.src}`);
+    console.log(`   Ação: Implementar fetch via background.js (CORS) ou usar proxy`);
+  }
+
+  // ============= 4. EXPORTAR =============
+  console.log('\n' + '='.repeat(85));
+  window.ANALISE_IFRAMES_COMPLETA = RESULTADO;
+  console.log('✅ Resultado salvo em: window.ANALISE_IFRAMES_COMPLETA');
+  console.log('\n👉 COPIE ABAIXO:');
+  console.log(JSON.stringify(RESULTADO, null, 2));
+
+  return RESULTADO;
+})();

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Leitor Estácio",
+  "version": "1.2.4",
+  "description": "Lê o conteúdo das aulas da Estácio em voz alta",
+  "permissions": ["activeTab", "scripting", "storage", "offscreen"],
+  "host_permissions": [
+    "*://*.estacio.br/*",
+    "*://*.estacioprd.net/*",
+    "*://stecine.azureedge.net/*",
+    "*://*.ensineme.com.br/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon.png",
+      "128": "icon.png"
+    },
+    "default_title": "Leitor Estácio"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.estacio.br/*",
+        "*://*.estacioprd.net/*",
+        "*://stecine.azureedge.net/*",
+        "*://*.ensineme.com.br/*"
+      ],
+      "js": ["content.js"],
+      "css": ["player.css"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

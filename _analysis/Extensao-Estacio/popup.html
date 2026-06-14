@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leitor Estácio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e0e0e0;
+    }
+
+    .container {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #0a0a1a;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .status {
+      background: rgba(79, 172, 254, 0.1);
+      border: 1px solid rgba(79, 172, 254, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .status-title {
+      font-weight: 600;
+      color: #63b3ed;
+      margin-bottom: 6px;
+    }
+
+    .status-text {
+      color: #a0aec0;
+      font-size: 12px;
+    }
+
+    .instructions {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #a0aec0;
+    }
+
+    .instructions h2 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #63b3ed;
+      margin-bottom: 8px;
+    }
+
+    .instructions ol {
+      margin-left: 16px;
+    }
+
+    .instructions li {
+      margin-bottom: 4px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: #0a0a1a;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #a0aec0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #e0e0e0;
+    }
+
+    .version {
+      text-align: center;
+      color: #4a5568;
+      font-size: 11px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .success-badge {
+      background: rgba(72, 187, 120, 0.2);
+      border: 1px solid rgba(72, 187, 120, 0.3);
+      color: #68d391;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="icon">🔊</div>
+      <h1>Leitor Estácio</h1>
+    </header>
+
+    <div class="status">
+      <div class="status-title">✅ Extensão Ativa</div>
+      <div class="status-text">
+        A extensão está funcionando. Acesse qualquer página da Estácio e o player
+        flutuante aparecerá no canto inferior direito da tela.
+      </div>
+      <div class="success-badge">v1.2 · Pronto para usar</div>
+    </div>
+
+    <div class="instructions">
+      <h2>🚀 Como Usar</h2>
+      <ol>
+        <li>Abra uma aula ou material da Estácio</li>
+        <li>Procure pelo player flutuante no canto inferior direito</li>
+        <li>Clique no botão <strong>▶</strong> para iniciar a leitura</li>
+        <li>Use a velocidade (botão <strong>1.0×</strong>) para ajustar</li>
+        <li>Clique em <strong>■</strong> para parar</li>
+      </ol>
+    </div>
+
+    <div class="buttons">
+      <button class="btn-primary" id="openExtensionSettings">
+        ⚙️ Configurações
+      </button>
+      <button class="btn-secondary" id="openDocs">
+        📖 Ajuda
+      </button>
+    </div>
+
+    <div class="version">
+      Leitor Estácio v1.2
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
