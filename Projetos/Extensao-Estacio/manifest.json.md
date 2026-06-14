@@ -1,16 +1,19 @@
 # manifest.json — Configuração da Extensão
 
-**Última atualização:** 2026-06-12
+**Última atualização:** 2026-06-14
 
 ## Versão
-`"version": "1.3.0"`
+`"version": "1.4.0"`
 
 ## Host Permissions (Sites onde a extensão ativa)
+- `http://*/*`
+- `https://*/*`
 - `*.estacio.br`
 - `*.estacioprd.net`
 - `stecine.azureedge.net`
 - `*.ensineme.com.br`
 - `warllem-supervoz-f5-api.hf.space`
+- `*.modal.run`
 
 ## Permissions Usadas
 - `activeTab` — para acessar aba ativa
@@ -21,11 +24,20 @@
 ## Content Scripts
 ```javascript
 {
-  "matches": ["*.estacio.br", "*.estacioprd.net"],
+  "matches": ["http://*/*", "https://*/*"],
   "all_frames": true,  // ← Crucial para iframes
   "run_at": "document_idle"
 }
 ```
+
+## Alteração 2026-06-14 — Páginas gerais
+
+- Versão atualizada para `1.4.0`.
+- Descrição alterada para leitura de páginas web em geral.
+- Adicionados `http://*/*` e `https://*/*` em `host_permissions`.
+- Adicionados `http://*/*` e `https://*/*` em `content_scripts.matches`.
+- A extensão agora injeta o player em páginas HTTP/HTTPS comuns, mantendo suporte específico aos domínios Estácio/Stecine/EnsineMe e às APIs SuperVoz/Modal.
+- Limitações permanecem: `chrome://`, Chrome Web Store, PDFs sem texto selecionável, canvas/imagem e páginas com bloqueios especiais do navegador.
 
 ## Status de Iframes Cross-Origin
 

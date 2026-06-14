@@ -1,10 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Leitor Estácio",
-  "version": "1.3.0",
-  "description": "Lê o conteúdo das aulas da Estácio em voz alta",
+  "version": "1.4.0",
+  "description": "Lê páginas da web em voz alta com voz nativa ou SuperVoz F5",
   "permissions": ["activeTab", "scripting", "storage", "offscreen"],
   "host_permissions": [
+    "http://*/*",
+    "https://*/*",
     "*://*.estacio.br/*",
     "*://*.estacioprd.net/*",
     "*://stecine.azureedge.net/*",
@@ -26,6 +28,8 @@
   "content_scripts": [
     {
       "matches": [
+        "http://*/*",
+        "https://*/*",
         "*://*.estacio.br/*",
         "*://*.estacioprd.net/*",
         "*://stecine.azureedge.net/*",

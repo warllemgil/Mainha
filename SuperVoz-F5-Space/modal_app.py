@@ -41,7 +41,7 @@ secrets = [modal.Secret.from_name("supervoz-f5-secrets")]
 @app.function(
     gpu=GPU_TYPE,
     timeout=900,
-    scaledown_window=5,
+    scaledown_window=60,
     volumes={CACHE_DIR: cache_volume},
     secrets=secrets,
 )

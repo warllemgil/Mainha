@@ -7,6 +7,7 @@ from pathlib import Path
 from threading import Lock
 
 import torch
+import soundfile as sf
 
 from voice_manager import ResolvedVoice, VoiceConfig, resolve_voice
 
@@ -116,6 +117,8 @@ class F5Engine:
         if not output_path.exists() or output_path.stat().st_size <= 0:
             raise RuntimeError("F5-TTS nao gerou um arquivo de audio valido.")
 
+        normalize_output_audio(output_path)
+
         return TTSResult(
             output_path=output_path,
             generation_time_seconds=elapsed,
@@ -149,3 +152,16 @@ def split_text(text: str, max_chars: int = 240) -> list[str]:
     if current:
         chunks.append(current)
     return chunks
+
+
+def normalize_output_audio(path: Path, target_peak: float = 0.92) -> None:
+    data, sample_rate = sf.read(str(path), always_2d=False)
+    if data.size == 0:
+        return
+
+    peak = float(abs(data).max())
+    if peak <= 0 or peak <= target_peak:
+        return
+
+    sf.write(str(path), data * (target_peak / peak), sample_rate)
+    LOGGER.info("Audio normalizado para peak %.2f: %s", target_peak, path)

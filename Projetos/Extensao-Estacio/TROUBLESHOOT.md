@@ -23,8 +23,8 @@
 2. Encontre "Leitor Estácio"
 3. Clique no ícone 🔄 (recarregar)
 
-#### Passo 2: Ir para uma página da Estácio
-1. Abra uma aula ou material
+#### Passo 2: Ir para uma página HTTP/HTTPS
+1. Abra uma aula, artigo, documentação ou site comum
 2. Espere **até 15 segundos** pela página carregar
 3. Veja se o player mostra um número de blocos
 
@@ -49,14 +49,14 @@ Isso vai mostrar:
 #### Se disser: "Encontrados 0 blocos"
 Há 3 possibilidades:
 
-**A) Conteúdo em iframe (mais comum na Estácio)**
+**A) Conteúdo em iframe**
 ```javascript
 // Verif no console:
 document.querySelectorAll('iframe').length  // se > 0, é esse o problema
 ```
 👉 **Solução:** As extensões Chrome não conseguem ler iframe por segurança. 
    Você pode:
-   - Tentar em outra página/matéria da Estácio
+   - Tentar em outra página/material
    - Reportar qual página está com iframe
    - Esperar por uma versão que inspira iframes
 
@@ -67,7 +67,7 @@ document.querySelectorAll('iframe').length  // se > 0, é esse o problema
 
 **C) Conteúdo carregando ainda mais lentamente**
 - Aguarde mais um pouco (até 30 segundos)
-- A Estácio tem servidores lentos às vezes
+- Alguns sites carregam conteúdo de forma lenta ou progressiva
 - Execute `window.leitorDebug()` de novo
 
 #### Se disser: "Encontrados 25 blocos"
@@ -98,3 +98,9 @@ speechSynthesis.getVoices()
 ---
 
 **Próxima sessão:** Leia este arquivo + DESENVOLVIMENTO.md para contexto
+
+## Atualização 2026-06-14
+
+- A extensão agora injeta em `http://*/*` e `https://*/*`.
+- Se o player não aparecer, confirme se a página não é `chrome://`, Chrome Web Store, PDF sem texto selecionável ou página protegida pelo navegador.
+- A SuperVoz usa prefetch sequencial de até 3 blocos. Se houver pausa, veja no console logs `[Leitor]` relacionados a `prefetch SuperVoz`.

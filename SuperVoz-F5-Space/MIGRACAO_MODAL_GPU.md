@@ -109,6 +109,15 @@ Recomendacao inicial: Opcao A para validar GPU rapidamente. Depois decidir se va
 
 Status em 2026-06-13: a base de codigo para deploy Modal foi adicionada em `modal_app.py`; ainda depende de conta Modal autenticada, billing/budget configurado e secrets criados fora do repositorio.
 
+Atualizacao em 2026-06-14:
+
+- Deploy ativo em `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
+- Voz mantida no bucket `https://huggingface.co/buckets/warllem/Voz_Noslen`.
+- `requirements-modal.txt` fixa `f5-tts==1.1.9`; `torchcodec` foi removido porque quebrou a inferencia no container CUDA atual.
+- `modal_app.py` usa `scaledown_window=60` para evitar cold start entre blocos durante leitura ativa.
+- `f5_engine.py` normaliza o WAV final quando o pico passa do limite configurado.
+- A extensao usa prefetch sequencial de ate 3 blocos seguintes, sem inferencias paralelas.
+
 1. Criar conta/projeto Modal.
 2. Configurar billing/budget baixo para evitar gasto inesperado.
 3. Criar secrets no Modal:
@@ -202,9 +211,9 @@ O app usa:
 - logs: `/cache/logs`.
 - preload no startup: desativado;
 - diagnostico remoto no startup: desativado;
-- `scaledown_window`: `5` segundos para reduzir tempo ocioso cobravel.
+- `scaledown_window`: `60` segundos para evitar desligamento durante leitura ativa sem manter GPU ligada por muito tempo.
 
-Para economizar credito, evite usar `Testar conexao` repetidamente. A extensao so deve chamar `POST /tts` quando o usuario clicar Play com `SuperVoz F5` selecionado. Ao clicar Stop ou fechar a pagina, a extensao aborta a chamada local; o container Modal encerra apos ficar ocioso.
+Para economizar credito, evite usar `Testar conexao` repetidamente. A extensao chama `POST /tts` quando o usuario clica Play com `SuperVoz F5` selecionado e pode pregerar ate 3 blocos seguintes em sequencia. Ao clicar Stop, trocar de rota ou fechar a pagina, a extensao aborta a chamada local; o container Modal encerra apos ficar ocioso.
 
 ## Melhorias de audio a testar junto com GPU
 

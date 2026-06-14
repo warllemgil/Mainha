@@ -17,10 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'native',
-    leitorSupervozApiUrl: 'https://warllem-supervoz-f5-api.hf.space',
+    leitorSupervozApiUrl: 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run',
     leitorHfToken: '',
-    leitorSupervozMode: 'fast',
-    leitorSupervozNfeStep: 8
+    leitorSupervozMode: 'balanced',
+    leitorSupervozNfeStep: 32
   };
 
   function setStatus(message, isError = false) {

@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log('[Leitor Estácio] Extensão instalada com sucesso!');
   } else if (details.reason === 'update') {
-    console.log('[Leitor Estácio] Extensão atualizada para v1.3.0');
+    console.log('[Leitor Estácio] Extensão atualizada para v1.4.0');
   }
 });
 

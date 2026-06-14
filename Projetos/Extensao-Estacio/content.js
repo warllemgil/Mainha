@@ -137,20 +137,23 @@
   let audioAtual = null;
   let audioUrlAtual = null;
   let audioAbortController = null;
+  let prefetchAbortController = null;
   let leituraSequencia = 0;
   const audioCache = new Map();
   const audioFetchesEmAndamento = new Map();
   const AUDIO_CACHE_MAX_ITEMS = 30;
+  const SUPERVOZ_PREFETCH_AHEAD = 3;
+  let prefetchAtivo = false;
   let velocidadeIndex = 1;
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
-  const DEFAULT_SUPERVOZ_API_URL = 'https://warllem-supervoz-f5-api.hf.space';
+  const DEFAULT_SUPERVOZ_API_URL = 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'native',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
     leitorHfToken: '',
-    leitorSupervozMode: 'fast',
-    leitorSupervozNfeStep: 8
+    leitorSupervozMode: 'balanced',
+    leitorSupervozNfeStep: 32
   };
   let leitorSettings = Object.assign({}, DEFAULT_SETTINGS);
   
@@ -372,6 +375,14 @@
     }
   }
 
+  function abortarPrefetchSuperVoz(){
+    if (prefetchAbortController) {
+      try { prefetchAbortController.abort(); } catch(e) {}
+      prefetchAbortController = null;
+    }
+    prefetchAtivo = false;
+  }
+
   function chaveCacheSuperVoz(texto){
     return JSON.stringify({
       api_url: normalizarSupervozApiBaseUrl(),
@@ -442,9 +453,43 @@
     return requestPromise;
   }
 
-  function preCarregarProximoBloco(){
-    // Mantido desativado para evitar chamadas Modal antes do usuario realmente ouvir o bloco.
-    return;
+  async function preCarregarProximoBloco(){
+    if (leitorSettings.leitorTtsProvider !== 'supervoz') return;
+    if (!leitorSettings.leitorHfToken) return;
+    if (prefetchAtivo) return;
+
+    const primeiroIndice = indiceAtual + 1;
+    const ultimoIndice = Math.min(blocos.length - 1, indiceAtual + SUPERVOZ_PREFETCH_AHEAD);
+    if (primeiroIndice > ultimoIndice) return;
+
+    prefetchAtivo = true;
+    prefetchAbortController = new AbortController();
+    const controller = prefetchAbortController;
+
+    try {
+      for (let i = primeiroIndice; i <= ultimoIndice; i++) {
+        if (controller.signal.aborted) break;
+
+        const bloco = blocos[i];
+        if (!bloco || !bloco.texto) continue;
+
+        const chave = chaveCacheSuperVoz(bloco.texto);
+        if (audioCache.has(chave) || audioFetchesEmAndamento.has(chave)) continue;
+
+        try {
+          await buscarAudioSuperVoz(bloco, controller.signal);
+        } catch (err) {
+          if (err && err.name === 'AbortError') break;
+          log('prefetch SuperVoz falhou', err);
+          break;
+        }
+      }
+    } finally {
+      if (prefetchAbortController === controller) {
+        prefetchAbortController = null;
+      }
+      prefetchAtivo = false;
+    }
   }
 
   function limparDestaques(){
@@ -458,6 +503,7 @@
     leituraSequencia++;
     speechSynthesis.cancel();
     limparAudioAtual();
+    abortarPrefetchSuperVoz();
     lendo = false;
     if (utterance){ utterance.onend = null; utterance.onerror = null; }
     utterance = null;
@@ -650,6 +696,7 @@
       
       speechSynthesis.cancel();
       limparAudioAtual();
+      abortarPrefetchSuperVoz();
       limparDestaques();
       blocos = [];
       indiceAtual = 0;

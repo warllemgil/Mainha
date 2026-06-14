@@ -1,6 +1,13 @@
 # popup.js — Script do Popup
 
-**Última atualização:** 2026-06-12
+**Última atualização:** 2026-06-14
+
+## Alteração 2026-06-14
+
+- URL padrão da API SuperVoz: `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
+- Modo padrão: `balanced`.
+- `nfe_step` padrão: `32`.
+- O popup mantém compatibilidade com URLs customizadas e token Bearer salvo em `chrome.storage.local`.
 
 ## Responsabilidade
 
@@ -20,10 +27,10 @@ Controla a tela que abre ao clicar no ícone da extensão.
 - Testa o endpoint:
 
 ```text
-GET https://warllem-supervoz-f5-api.hf.space/health
+GET https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run/health
 ```
 
-Ou `GET {leitorSupervozApiUrl}/health`, quando a URL for trocada para Modal GPU.
+Ou `GET {leitorSupervozApiUrl}/health`, quando a URL for trocada manualmente.
 
 ## Segurança
 

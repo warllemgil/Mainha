@@ -1,6 +1,6 @@
 # background.js — Service Worker de Fundo
 
-**Última atualização:** 2026-06-12
+**Última atualização:** 2026-06-14
 **Linhas:** ~21
 
 ## Responsabilidades Principais
@@ -8,7 +8,7 @@
 ### `onInstalled`
 - Log de instalação
 - Registra instalação ou atualização
-- A mensagem de update foi ajustada para `v1.3.0`
+- A mensagem de update foi ajustada para `v1.4.0`
 
 ### `onMessage`
 - Placeholder para futuro: `getVoices`

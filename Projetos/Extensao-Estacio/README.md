@@ -1,10 +1,19 @@
-# 🔊 Leitor Estácio — v1.3
+# 🔊 Leitor Estácio — v1.4
 
-Extensão Chrome que lê automaticamente o conteúdo de aulas da Estácio em voz alta com suporte completo a vozes em português.
+Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do navegador ou SuperVoz F5.
+
+## ✨ Principais Correções (v1.4)
+
+- ✅ **Leitura em sites gerais** — O player agora é injetado em páginas `http://*/*` e `https://*/*`, não apenas em domínios da Estácio.
+- ✅ **SuperVoz Modal como padrão** — A URL padrão da API é `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
+- ✅ **Qualidade SuperVoz ajustada** — O padrão passou para `balanced` com `nfe_step=32`.
+- ✅ **Prefetch sequencial** — Durante a leitura, a extensão tenta manter até 3 blocos seguintes no cache, um por vez.
+- ✅ **Proteção de custo** — O prefetch é abortado ao parar a leitura, trocar de rota ou fechar a página.
+- ✅ **Normalização de áudio no servidor** — O backend reduz pico excessivo para evitar clipping perceptível.
 
 ## ✨ Principais Correções (v1.3)
 
-- ✅ **SuperVoz F5 opcional** — Pode usar a API `https://warllem-supervoz-f5-api.hf.space/tts`.
+- ✅ **SuperVoz F5 opcional** — Pode usar API configurável no popup.
 - ✅ **Fallback seguro** — Se a SuperVoz falhar ou não houver `HF_TOKEN`, usa a voz nativa do navegador.
 - ✅ **Configuração no popup** — Salva motor de voz, `HF_TOKEN`, modo e `nfe_step` em `chrome.storage.local`.
 - ✅ **URL SuperVoz configurável** — Permite apontar para o Hugging Face Space ou para o novo endpoint Modal GPU.
@@ -46,7 +55,7 @@ estacio-leitor/
 - Selecione a pasta `estacio-leitor`
 
 ### 4. Pronto! 🎉
-- Acesse qualquer página da Estácio
+- Acesse uma página HTTP/HTTPS comum
 - O player flutuante aparecerá no **canto inferior direito**
 - Clique no ícone da extensão para ver o painel de controle
 
@@ -69,6 +78,7 @@ estacio-leitor/
 ✅ **Rola automaticamente** para o texto atual
 ✅ **Mostra progresso** com barra de carregamento
 ✅ **Funciona com SPAs** (aguarda conteúdo carregado dinamicamente)
+✅ **Funciona em sites HTTP/HTTPS gerais**; páginas internas do Chrome, Chrome Web Store, PDFs sem camada de texto e conteúdos em canvas/imagem continuam fora do alcance normal.
 
 ## 🔧 Configuração Avançada
 
@@ -83,15 +93,15 @@ speechSynthesis.getVoices()
 Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usar Francisca automaticamente.
 
 ### Integrar com API TTS Customizada
-Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API no campo `URL da API SuperVoz` e o token Bearer, depois salve. Em CPU Basic, use `fast` e `nfe_step=8` para reduzir a latência. Em Modal GPU, comece com `balanced` e `nfe_step=32`.
+Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API no campo `URL da API SuperVoz` e o token Bearer, depois salve. O padrão atual é Modal GPU com `balanced` e `nfe_step=32`.
 
-Para economizar credito no Modal, a extensao nao pre-carrega o proximo bloco automaticamente. Ela chama `/tts` somente durante a leitura. O botao `Testar conexao` chama `/health`; use apenas quando precisar conferir a configuracao.
+Para reduzir pausas, a extensão faz prefetch sequencial de até 3 blocos seguintes enquanto o áudio atual toca. Ela não dispara 3 inferências em paralelo; gera um bloco por vez para evitar múltiplos containers e gasto inesperado. O botão `Testar conexao` chama `/health`; use apenas quando precisar conferir a configuração.
 
 ## 🐛 Troubleshooting
 
 ### Player não aparece
 - Recarregue a página (Ctrl+R)
-- Verifique se está em `estacio.br`, `estacioprd.net` ou `stecine.azureedge.net`
+- Verifique se a página é `http://` ou `https://`; páginas `chrome://`, Chrome Web Store e algumas páginas protegidas não permitem content scripts
 - Abra Console (F12) e procure por erros em vermelho
 
 ### Botões não funcionam
@@ -135,7 +145,7 @@ Para economizar credito no Modal, a extensao nao pre-carrega o proximo bloco aut
 
 Se encontrar problemas:
 1. Abra Console (F12) e procure erros
-2. Teste em outra página da Estácio
+2. Teste em outra página HTTP/HTTPS
 3. Tente desinstalar e reinstalar a extensão
 4. Reinicie o Chrome
 
@@ -145,6 +155,6 @@ Uso pessoal. Modificar e distribuir livremente.
 
 ---
 
-**Versão:** 1.3  
+**Versão:** 1.4  
 **Testado em:** Chrome 120+  
 **Último update:** Junho 2026
