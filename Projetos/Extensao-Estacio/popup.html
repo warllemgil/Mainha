@@ -272,8 +272,19 @@
         </select>
       </label>
       <label>
-        URL da API SuperVoz
+        Processamento
+        <select id="supervozProcessingMode">
+          <option value="ultra">Modo Ultra (GPU)</option>
+          <option value="lite">Modo Lite (CPU)</option>
+        </select>
+      </label>
+      <label>
+        URL Ultra (GPU)
         <input id="supervozApiUrl" type="url" placeholder="https://...modal.run" autocomplete="off">
+      </label>
+      <label>
+        URL Lite (CPU)
+        <input id="supervozLiteApiUrl" type="url" placeholder="https://...run.app" autocomplete="off">
       </label>
       <label>
         Token da API
@@ -302,13 +313,14 @@
         Pré-gerar próximo bloco durante a leitura
       </label>
       <div class="hint">
-        A extensão usa Authorization: Bearer no Modal GPU. Pré-geração fica desligada por padrão para evitar custo se você parar a leitura.
+        Ultra usa a API GPU atual. Lite usa a API CPU no Cloud Run e força NFE entre 10 e 16 para priorizar velocidade.
       </div>
       <button class="btn-primary" id="saveSettings">Salvar voz</button>
       <button class="btn-secondary" id="testSupervoz">Testar conexão</button>
       <div id="settingsStatus"></div>
       <div class="diagnostics">
         <div><span>Backend</span><span id="diagBackendUrl">-</span></div>
+        <div><span>Modo</span><span id="diagProcessingMode">-</span></div>
         <div><span>Token</span><span id="diagToken">-</span></div>
         <div><span>Motor</span><span id="diagProvider">-</span></div>
         <div><span>Endpoint</span><span id="diagEndpoint">-</span></div>

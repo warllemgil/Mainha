@@ -7,6 +7,7 @@
 
 ## Alteração 2026-06-15 v1.4.2
 
+- Adicionada permissão `https://*.run.app/*` para chamadas ao backend Lite hospedado no Google Cloud Run.
 - Versão atualizada para `1.4.2`.
 - `content_scripts.js` continua carregando `supervoz-secrets.js` antes de `content.js`.
 - A correção de auth usa o header `Authorization: Bearer <API_AUTH_TOKEN>`, confirmado pelo backend FastAPI.
@@ -26,6 +27,7 @@
 - `*.ensineme.com.br`
 - `warllem-supervoz-f5-api.hf.space`
 - `*.modal.run`
+- `*.run.app`
 
 ## Permissions Usadas
 - `activeTab` — para acessar aba ativa

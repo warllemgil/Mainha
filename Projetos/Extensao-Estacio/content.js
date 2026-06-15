@@ -149,13 +149,16 @@
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
   const DEFAULT_SUPERVOZ_API_URL = obterUrlPadraoSuperVoz() || 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const DEFAULT_SUPERVOZ_LITE_API_URL = obterUrlPadraoSuperVozLite();
   const LEGACY_SUPERVOZ_API_URLS = [
     'https://warllem-supervoz-f5-api.hf.space'
   ];
   const DEFAULT_SUPERVOZ_API_TOKEN = obterTokenPadraoSuperVoz();
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'supervoz',
+    leitorSupervozProcessingMode: 'ultra',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
+    leitorSupervozLiteApiUrl: DEFAULT_SUPERVOZ_LITE_API_URL,
     leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
@@ -396,6 +399,7 @@
   function chaveCacheSuperVoz(texto){
     return JSON.stringify({
       api_url: normalizarSupervozApiBaseUrl(),
+      processing_mode: leitorSettings.leitorSupervozProcessingMode || 'ultra',
       voice: 'warllem',
       text: texto,
       speed: velocidades[velocidadeIndex] || 1.0,
@@ -405,11 +409,12 @@
   }
 
   function normalizarSupervozApiBaseUrl(){
-    return normalizarSupervozApiUrl(leitorSettings.leitorSupervozApiUrl);
+    return obterSupervozApiUrlEfetiva(leitorSettings);
   }
 
-  function normalizarSupervozApiUrl(value){
-    const configuredUrl = limparValorConfiguracao(value || DEFAULT_SUPERVOZ_API_URL);
+  function normalizarSupervozApiUrl(value, fallback = DEFAULT_SUPERVOZ_API_URL){
+    const configuredUrl = limparValorConfiguracao(value || fallback);
+    if (!configuredUrl) return '';
     let normalized = configuredUrl.replace(/\/+$/, '').replace(/\/(tts|health|voices)$/, '');
     if (LEGACY_SUPERVOZ_API_URLS.includes(normalized)) {
       normalized = DEFAULT_SUPERVOZ_API_URL;
@@ -420,8 +425,10 @@
   function normalizarConfiguracoes(settings){
     const normalized = Object.assign({}, DEFAULT_SETTINGS, settings || {});
     normalized.leitorSupervozApiUrl = normalizarSupervozApiUrl(normalized.leitorSupervozApiUrl);
+    normalized.leitorSupervozLiteApiUrl = normalizarSupervozApiUrl(normalized.leitorSupervozLiteApiUrl, DEFAULT_SUPERVOZ_LITE_API_URL);
+    normalized.leitorSupervozProcessingMode = normalizarModoProcessamento(normalized.leitorSupervozProcessingMode);
     const configuredToken = normalized.leitorSupervozApiToken || normalized.leitorHfToken;
-    const token = normalizarSupervozToken(configuredToken, normalized.leitorSupervozApiUrl);
+    const token = normalizarSupervozToken(configuredToken, obterSupervozApiUrlEfetiva(normalized));
     normalized.leitorHfToken = token;
     normalized.leitorSupervozApiToken = token;
     normalized.leitorTtsProvider = normalized.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
@@ -429,12 +436,28 @@
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
     normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
     normalized.leitorSupervozPrefetchEnabled = normalized.leitorSupervozPrefetchEnabled === true;
+    if (normalized.leitorSupervozProcessingMode === 'lite') {
+      normalized.leitorSupervozMode = 'fast';
+      normalized.leitorSupervozNfeStep = Math.max(10, Math.min(16, normalized.leitorSupervozNfeStep || 12));
+    }
     return normalized;
+  }
+
+  function normalizarModoProcessamento(value){
+    return value === 'lite' ? 'lite' : 'ultra';
+  }
+
+  function obterSupervozApiUrlEfetiva(settings){
+    const modo = normalizarModoProcessamento(settings.leitorSupervozProcessingMode);
+    if (modo === 'lite') {
+      return normalizarSupervozApiUrl(settings.leitorSupervozLiteApiUrl, DEFAULT_SUPERVOZ_LITE_API_URL);
+    }
+    return normalizarSupervozApiUrl(settings.leitorSupervozApiUrl, DEFAULT_SUPERVOZ_API_URL);
   }
 
   function normalizarSupervozToken(value, apiUrl){
     const token = limparValorConfiguracao(value).replace(/^Bearer\s+/i, '').trim();
-    if (DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiUrl(apiUrl) === DEFAULT_SUPERVOZ_API_URL) {
+    if (DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiUrl(apiUrl, '') === DEFAULT_SUPERVOZ_API_URL) {
       return DEFAULT_SUPERVOZ_API_TOKEN;
     }
     return token;
@@ -450,6 +473,11 @@
     return limparValorConfiguracao(defaults.apiUrl);
   }
 
+  function obterUrlPadraoSuperVozLite(){
+    const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
+    return limparValorConfiguracao(defaults.liteApiUrl);
+  }
+
   function limparValorConfiguracao(value){
     return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
   }
@@ -460,11 +488,12 @@
   }
 
   function registrarSupervoz(endpoint, status){
-    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, normalizarSupervozApiBaseUrl());
     log('[SuperVoz]', {
       url: normalizarSupervozApiBaseUrl(),
       endpoint,
       status: status || 'iniciando',
+      mode: leitorSettings.leitorSupervozProcessingMode || 'ultra',
       token: mascararToken(token)
     });
   }
@@ -745,7 +774,7 @@
 
   function montarHeadersSuperVoz(){
     const headers = {'Content-Type': 'application/json'};
-    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, normalizarSupervozApiBaseUrl());
     if (token) {
       headers.Authorization = `Bearer ${token}`;
       headers['X-API-Token'] = token;
@@ -757,9 +786,14 @@
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const method = options.method || 'GET';
     const timeout = criarSignalComTimeout(options.signal, options.timeoutMs || SUPERVOZ_TTS_TIMEOUT_MS);
-    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, normalizarSupervozApiBaseUrl());
     const headers = Object.assign({}, montarHeadersSuperVoz(), options.headers || {});
-    const url = `${normalizarSupervozApiBaseUrl()}${normalizedEndpoint}`;
+    const baseUrl = normalizarSupervozApiBaseUrl();
+    if (!baseUrl) {
+      timeout.clear();
+      throw new Error('URL da API SuperVoz não configurada para o modo selecionado.');
+    }
+    const url = `${baseUrl}${normalizedEndpoint}`;
 
     log('[SuperVoz] endpoint:', normalizedEndpoint);
     log('[SuperVoz] method:', method);

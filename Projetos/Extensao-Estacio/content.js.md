@@ -1,7 +1,19 @@
 # content.js — Script Principal de Leitura
 
 **Última atualização:** 2026-06-15
-**Linhas:** ~700
+**Linhas:** ~830
+
+## Alteração 2026-06-15 — Modo Ultra/Lite
+
+- Adicionado `leitorSupervozProcessingMode` com valores `ultra` e `lite`.
+- `ultra` usa a URL GPU atual em `leitorSupervozApiUrl`.
+- `lite` usa a URL CPU/Cloud Run em `leitorSupervozLiteApiUrl`.
+- A URL efetiva agora é resolvida por `obterSupervozApiUrlEfetiva()`, preservando compatibilidade com o endpoint Modal atual.
+- Quando o modo Lite está ativo, o script força `leitorSupervozMode='fast'` e limita `leitorSupervozNfeStep` para `10..16`.
+- A chave do cache de áudio passou a incluir `processing_mode` e URL efetiva para evitar reaproveitar áudio entre Ultra e Lite.
+- Logs e headers agora calculam token usando a URL efetiva do modo selecionado.
+- Se o usuário selecionar Lite sem configurar URL, a chamada falha com erro explícito de configuração em vez de cair para a GPU.
+- `globalThis.LEITOR_SUPERVOZ_DEFAULTS.liteApiUrl` passa a ser aceito como URL padrão do Cloud Run.
 
 ## Alteração 2026-06-15 — SuperVoz sem configuração manual
 
@@ -39,6 +51,8 @@ As configurações vêm de `chrome.storage.local`:
 
 - `leitorTtsProvider`: `native` ou `supervoz`.
 - `leitorSupervozApiUrl`: URL base da API SuperVoz. Padrao: `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
+- `leitorSupervozLiteApiUrl`: URL base da API Lite no Cloud Run.
+- `leitorSupervozProcessingMode`: `ultra` para GPU/Modal ou `lite` para CPU/Cloud Run.
 - `leitorHfToken`: token usado no header `Authorization: Bearer ...`.
 - `leitorSupervozApiToken`: nome novo do token da API SuperVoz; `leitorHfToken` foi preservado por compatibilidade.
 - `leitorSupervozMode`: `fast`, `balanced` ou `quality`.
@@ -84,7 +98,7 @@ Limitação: esse cache é em memória. Ao recarregar a página ou reiniciar o n
 ✅ Problema de blocos repetidos corrigido (filtragem de elementos filhos).
 ✅ Seleção de Voz Neural priorizada (Edge Natural / Google Premium).
 ✅ SuperVoz F5 opcional com fallback para voz nativa.
-✅ URL da API SuperVoz configurável para alternar entre Hugging Face Space e Modal GPU.
+✅ URL da API SuperVoz configurável para alternar entre Modal GPU e Cloud Run CPU.
 ✅ Cache em memória para reaproveitar áudios já gerados na mesma sessão.
 ✅ Pré-carregamento sequencial de até 3 blocos para reduzir pausas sem disparar inferências paralelas.
 ✅ Injeção em sites HTTP/HTTPS gerais; a extração continua usando seletores semânticos, fallback de body e ponte de iframes.

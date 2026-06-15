@@ -1,0 +1,5 @@
+torch
+torchaudio
+onnx>=1.16.0
+onnxruntime>=1.18.0
+f5-tts

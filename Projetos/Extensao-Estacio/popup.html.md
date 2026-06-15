@@ -4,6 +4,10 @@
 
 ## Alteração 2026-06-15
 
+- Adicionado seletor visual de processamento com `Modo Ultra (GPU)` e `Modo Lite (CPU)`.
+- O popup agora exibe campos separados para `URL Ultra (GPU)` e `URL Lite (CPU)`.
+- O painel de diagnóstico exibe também o modo selecionado.
+- Texto de ajuda atualizado para explicar que o Lite usa Cloud Run e NFE entre `10` e `16`.
 - Status visual atualizado para `v1.4.2`.
 - `supervoz-secrets.js` é carregado antes de `popup.js`.
 - Campo de token indica que a API pode vir configurada localmente.
@@ -17,8 +21,10 @@
 - Instruções básicas
 - Botões: "Configurações" e "Ajuda"
 - Painel "Motor de voz"
+- Seletor `Modo Ultra (GPU)` / `Modo Lite (CPU)`
 - Campo `HF_TOKEN`
-- Campo `URL da API SuperVoz`
+- Campo `URL Ultra (GPU)`
+- Campo `URL Lite (CPU)`
 - Seletor `Nativa do navegador` / `SuperVoz F5`
 - Seletor de modo `fast`, `balanced`, `quality`
 - Campo `NFE`

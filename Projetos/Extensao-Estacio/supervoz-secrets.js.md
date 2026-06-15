@@ -9,7 +9,8 @@ Define `globalThis.LEITOR_SUPERVOZ_DEFAULTS` antes de `popup.js` e `content.js`.
 ## Campos
 
 - `apiToken`: token Bearer local usado pelo endpoint Modal quando preenchido.
-- `apiUrl`: URL local opcional do backend. Se vazio, a extensão usa o Modal padrão.
+- `apiUrl`: URL local opcional do backend Ultra/GPU. Se vazio, a extensão usa o Modal padrão.
+- `liteApiUrl`: URL local opcional do backend Lite/CPU no Cloud Run. Se vazio, o usuário deve preencher no popup antes de usar o Lite.
 
 ## Motivo
 
@@ -23,6 +24,7 @@ Pode ser gerado por:
 
 ```bash
 MAINHA_BACKEND_URL="https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run" \
+MAINHA_LITE_BACKEND_URL="https://supervoz-f5-lite-xxxxx-uc.a.run.app" \
 MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
 node scripts/build-supervoz-secrets.js
 ```

@@ -11,6 +11,7 @@ Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do naveg
 - ✅ **Correção de HTTP 401** — A extensão normaliza tokens salvos no Chrome e remove prefixo `Bearer` duplicado. Quando `supervoz-secrets.js` tem token local preenchido e a URL é o Modal padrão, esse token local sobrescreve valores antigos/incorretos.
 - ✅ **Leitura em sites gerais** — O player agora é injetado em páginas `http://*/*` e `https://*/*`, não apenas em domínios da Estácio.
 - ✅ **SuperVoz Modal como padrão** — A URL padrão da API é `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
+- ✅ **Modo Ultra/Lite** — O popup permite escolher entre Modo Ultra (GPU, Modal atual) e Modo Lite (CPU, Cloud Run). Cada modo guarda sua própria URL.
 - ✅ **Qualidade SuperVoz ajustada** — O padrão passou para `balanced` com `nfe_step=32`.
 - ✅ **Prefetch sequencial** — Durante a leitura, a extensão tenta manter até 3 blocos seguintes no cache, um por vez.
 - ✅ **Proteção de custo** — O prefetch é abortado ao parar a leitura, trocar de rota ou fechar a página.
@@ -98,7 +99,9 @@ speechSynthesis.getVoices()
 Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usar Francisca automaticamente.
 
 ### Integrar com API TTS Customizada
-Já existe integração com a API SuperVoz F5. A extensão vem apontada para o Modal GPU, `balanced` e `nfe_step=32`. O token padrão local é lido de `supervoz-secrets.js`, carregado antes do popup e do content script. O popup continua permitindo trocar URL/token se o endpoint mudar.
+Já existe integração com a API SuperVoz F5. A extensão vem apontada para o Modal GPU, `balanced` e `nfe_step=32`. O usuário pode alternar entre `Modo Ultra (GPU)` e `Modo Lite (CPU)` no popup. O Lite deve apontar para a URL do Cloud Run e força `nfe_step` entre `10` e `16`.
+
+O token padrão local é lido de `supervoz-secrets.js`, carregado antes do popup e do content script. O popup continua permitindo trocar URL/token se o endpoint mudar.
 
 Se o teste de conexão ou player mostrava `HTTP 401`, a causa provável era token ausente/incorreto no request específico. Agora `GET /health` e `POST /tts` usam funções centralizadas que enviam os mesmos headers de autenticação e os mesmos logs seguros.
 
@@ -107,6 +110,7 @@ Para gerar secrets por build/local:
 ```bash
 cd Projetos/Extensao-Estacio
 MAINHA_BACKEND_URL="https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run" \
+MAINHA_LITE_BACKEND_URL="https://supervoz-f5-lite-xxxxx-uc.a.run.app" \
 MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
 node scripts/build-supervoz-secrets.js
 ```

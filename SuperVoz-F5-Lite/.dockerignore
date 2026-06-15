@@ -1,0 +1,10 @@
+.venv
+.venv-convert
+__pycache__
+*.pyc
+cache
+outputs
+*.wav
+*.pt
+*.safetensors
+*.onnx

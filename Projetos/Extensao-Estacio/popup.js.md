@@ -4,6 +4,12 @@
 
 ## Alteração 2026-06-15
 
+- Adicionado seletor `leitorSupervozProcessingMode` com `Modo Ultra (GPU)` e `Modo Lite (CPU)`.
+- Adicionado campo `leitorSupervozLiteApiUrl` para URL separada do Cloud Run.
+- Diagnóstico exibe o modo efetivo e a URL efetiva usada no teste.
+- O botão `Testar conexão` chama `/health` na URL do modo selecionado.
+- Em Lite, `nfe_step` é normalizado para `10..16` e o modo SuperVoz é salvo como `fast`.
+- `globalThis.LEITOR_SUPERVOZ_DEFAULTS.liteApiUrl` passa a ser lido como padrão local opcional.
 - v1.4.2: o botão `Testar conexão` usa timeout, mensagens específicas por status HTTP e diagnóstico visível no popup.
 - O endpoint testado é `GET /health`, via função centralizada `supervozRequest('/health')`, com headers `Authorization: Bearer <API_AUTH_TOKEN>` e `X-API-Token`.
 - Tokens são salvos em `leitorSupervozApiToken` e também em `leitorHfToken` para compatibilidade com versões antigas.
@@ -34,9 +40,11 @@ Controla a tela que abre ao clicar no ícone da extensão.
 - Abre o repositório no GitHub.
 - Carrega configurações salvas em `chrome.storage.local`.
 - Salva:
-  - `leitorTtsProvider`
-  - `leitorSupervozApiUrl`
-- `leitorHfToken`
+- `leitorTtsProvider`
+- `leitorSupervozProcessingMode`
+- `leitorSupervozApiUrl`
+  - `leitorSupervozLiteApiUrl`
+  - `leitorHfToken`
   - `leitorSupervozApiToken`
   - `leitorSupervozMode`
   - `leitorSupervozNfeStep`
@@ -48,7 +56,7 @@ Controla a tela que abre ao clicar no ícone da extensão.
 GET https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run/health
 ```
 
-Ou `GET {leitorSupervozApiUrl}/health`, quando a URL for trocada manualmente.
+Ou `GET {URL efetiva}/health`, usando `leitorSupervozApiUrl` no Ultra e `leitorSupervozLiteApiUrl` no Lite.
 
 ## Token embutido
 

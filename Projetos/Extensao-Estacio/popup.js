@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const openExtensionSettings = document.getElementById('openExtensionSettings');
   const openDocs = document.getElementById('openDocs');
   const ttsProvider = document.getElementById('ttsProvider');
+  const supervozProcessingMode = document.getElementById('supervozProcessingMode');
   const supervozApiUrl = document.getElementById('supervozApiUrl');
+  const supervozLiteApiUrl = document.getElementById('supervozLiteApiUrl');
   const hfToken = document.getElementById('hfToken');
   const supervozMode = document.getElementById('supervozMode');
   const supervozNfeStep = document.getElementById('supervozNfeStep');
@@ -17,12 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const testSupervoz = document.getElementById('testSupervoz');
   const settingsStatus = document.getElementById('settingsStatus');
   const diagBackendUrl = document.getElementById('diagBackendUrl');
+  const diagProcessingMode = document.getElementById('diagProcessingMode');
   const diagToken = document.getElementById('diagToken');
   const diagProvider = document.getElementById('diagProvider');
   const diagEndpoint = document.getElementById('diagEndpoint');
   const diagHealth = document.getElementById('diagHealth');
   const diagLastError = document.getElementById('diagLastError');
   const DEFAULT_SUPERVOZ_API_URL = getDefaultSupervozUrl() || 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const DEFAULT_SUPERVOZ_LITE_API_URL = getDefaultSupervozLiteUrl();
   const HEALTH_TIMEOUT_MS = 20000;
   const LEGACY_SUPERVOZ_API_URLS = [
     'https://warllem-supervoz-f5-api.hf.space'
@@ -31,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const DEFAULT_SETTINGS = {
     leitorTtsProvider: 'supervoz',
+    leitorSupervozProcessingMode: 'ultra',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
+    leitorSupervozLiteApiUrl: DEFAULT_SUPERVOZ_LITE_API_URL,
     leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
@@ -49,7 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const settings = normalizeSettings(items);
     chrome.storage.local.set(settings);
     ttsProvider.value = settings.leitorTtsProvider;
+    supervozProcessingMode.value = settings.leitorSupervozProcessingMode;
     supervozApiUrl.value = settings.leitorSupervozApiUrl;
+    supervozLiteApiUrl.value = settings.leitorSupervozLiteApiUrl;
     hfToken.value = settings.leitorHfToken;
     supervozMode.value = settings.leitorSupervozMode;
     supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
@@ -75,7 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const nfeStep = Math.max(4, Math.min(64, Number(supervozNfeStep.value) || 8));
     const settings = normalizeSettings({
       leitorTtsProvider: ttsProvider.value,
+      leitorSupervozProcessingMode: supervozProcessingMode.value,
       leitorSupervozApiUrl: normalizeApiUrl(supervozApiUrl.value),
+      leitorSupervozLiteApiUrl: normalizeApiUrl(supervozLiteApiUrl.value, DEFAULT_SUPERVOZ_LITE_API_URL),
       leitorHfToken: hfToken.value,
       leitorSupervozApiToken: hfToken.value,
       leitorSupervozMode: supervozMode.value,
@@ -84,8 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
       leitorSupervozPrefetchEnabled: supervozPrefetchEnabled.checked
     });
     chrome.storage.local.set(settings, () => {
+      supervozProcessingMode.value = settings.leitorSupervozProcessingMode;
       supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
       supervozApiUrl.value = settings.leitorSupervozApiUrl;
+      supervozLiteApiUrl.value = settings.leitorSupervozLiteApiUrl;
       hfToken.value = settings.leitorHfToken;
       supervozFallbackNative.checked = settings.leitorSupervozFallbackNative === true;
       supervozPrefetchEnabled.checked = settings.leitorSupervozPrefetchEnabled === true;
@@ -95,7 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   testSupervoz.addEventListener('click', async () => {
-    const apiUrl = normalizeApiUrl(supervozApiUrl.value);
+    const processingMode = normalizeProcessingMode(supervozProcessingMode.value);
+    const apiUrl = effectiveSupervozApiUrl({
+      leitorSupervozProcessingMode: processingMode,
+      leitorSupervozApiUrl: supervozApiUrl.value,
+      leitorSupervozLiteApiUrl: supervozLiteApiUrl.value
+    });
     const token = normalizeToken(hfToken.value, apiUrl);
 
     setStatus('Testando...');
@@ -131,14 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  [ttsProvider, supervozApiUrl, hfToken, supervozMode, supervozNfeStep, supervozFallbackNative, supervozPrefetchEnabled].forEach((element) => {
+  [ttsProvider, supervozProcessingMode, supervozApiUrl, supervozLiteApiUrl, hfToken, supervozMode, supervozNfeStep, supervozFallbackNative, supervozPrefetchEnabled].forEach((element) => {
     element.addEventListener('change', () => updateDiagnosticsFromForm());
     element.addEventListener('input', () => updateDiagnosticsFromForm());
   });
 
-  function normalizeApiUrl(value) {
-    const fallback = DEFAULT_SUPERVOZ_API_URL;
+  function normalizeApiUrl(value, fallback = DEFAULT_SUPERVOZ_API_URL) {
     const raw = cleanConfigValue(value || fallback) || fallback;
+    if (!raw) return '';
     let normalized = raw.replace(/\/+$/, '').replace(/\/(tts|health|voices)$/, '');
     if (LEGACY_SUPERVOZ_API_URLS.includes(normalized)) {
       normalized = DEFAULT_SUPERVOZ_API_URL;
@@ -149,8 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function normalizeSettings(items) {
     const normalized = Object.assign({}, DEFAULT_SETTINGS, items || {});
     normalized.leitorSupervozApiUrl = normalizeApiUrl(normalized.leitorSupervozApiUrl);
+    normalized.leitorSupervozLiteApiUrl = normalizeApiUrl(normalized.leitorSupervozLiteApiUrl, DEFAULT_SUPERVOZ_LITE_API_URL);
+    normalized.leitorSupervozProcessingMode = normalizeProcessingMode(normalized.leitorSupervozProcessingMode);
+    const effectiveUrl = effectiveSupervozApiUrl(normalized);
     const configuredToken = normalized.leitorSupervozApiToken || normalized.leitorHfToken;
-    const token = normalizeToken(configuredToken, normalized.leitorSupervozApiUrl);
+    const token = normalizeToken(configuredToken, effectiveUrl);
     normalized.leitorHfToken = token;
     normalized.leitorSupervozApiToken = token;
     normalized.leitorTtsProvider = normalized.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
@@ -158,12 +178,28 @@ document.addEventListener('DOMContentLoaded', () => {
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
     normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
     normalized.leitorSupervozPrefetchEnabled = normalized.leitorSupervozPrefetchEnabled === true;
+    if (normalized.leitorSupervozProcessingMode === 'lite') {
+      normalized.leitorSupervozMode = 'fast';
+      normalized.leitorSupervozNfeStep = Math.max(10, Math.min(16, normalized.leitorSupervozNfeStep || 12));
+    }
     return normalized;
+  }
+
+  function normalizeProcessingMode(value) {
+    return value === 'lite' ? 'lite' : 'ultra';
+  }
+
+  function effectiveSupervozApiUrl(settings) {
+    const processingMode = normalizeProcessingMode(settings.leitorSupervozProcessingMode);
+    if (processingMode === 'lite') {
+      return normalizeApiUrl(settings.leitorSupervozLiteApiUrl, DEFAULT_SUPERVOZ_LITE_API_URL);
+    }
+    return normalizeApiUrl(settings.leitorSupervozApiUrl, DEFAULT_SUPERVOZ_API_URL);
   }
 
   function normalizeToken(value, apiUrl) {
     const token = cleanConfigValue(value).replace(/^Bearer\s+/i, '').trim();
-    if (DEFAULT_SUPERVOZ_API_TOKEN && normalizeApiUrl(apiUrl) === DEFAULT_SUPERVOZ_API_URL) {
+    if (DEFAULT_SUPERVOZ_API_TOKEN && normalizeApiUrl(apiUrl, '') === DEFAULT_SUPERVOZ_API_URL) {
       return DEFAULT_SUPERVOZ_API_TOKEN;
     }
     return token;
@@ -179,12 +215,25 @@ document.addEventListener('DOMContentLoaded', () => {
     return cleanConfigValue(defaults.apiUrl);
   }
 
+  function getDefaultSupervozLiteUrl() {
+    const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
+    return cleanConfigValue(defaults.liteApiUrl);
+  }
+
   function cleanConfigValue(value) {
     return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
   }
 
   function supervozRequest(endpoint, options = {}) {
-    const apiUrl = normalizeApiUrl(options.apiUrl || supervozApiUrl.value);
+    const selectedApiUrl = options.apiUrl !== undefined ? options.apiUrl : effectiveSupervozApiUrl({
+      leitorSupervozProcessingMode: supervozProcessingMode.value,
+      leitorSupervozApiUrl: supervozApiUrl.value,
+      leitorSupervozLiteApiUrl: supervozLiteApiUrl.value
+    });
+    const apiUrl = normalizeApiUrl(selectedApiUrl, '');
+    if (!apiUrl) {
+      return Promise.reject(new Error('URL da API SuperVoz não configurada para o modo selecionado.'));
+    }
     const token = normalizeToken(options.token || hfToken.value, apiUrl);
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const method = options.method || 'GET';
@@ -239,7 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateDiagnostics(settings) {
     const normalized = normalizeSettings(settings || {
       leitorTtsProvider: ttsProvider.value,
+      leitorSupervozProcessingMode: supervozProcessingMode.value,
       leitorSupervozApiUrl: supervozApiUrl.value,
+      leitorSupervozLiteApiUrl: supervozLiteApiUrl.value,
       leitorHfToken: hfToken.value,
       leitorSupervozApiToken: hfToken.value,
       leitorSupervozMode: supervozMode.value,
@@ -247,7 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
       leitorSupervozFallbackNative: supervozFallbackNative.checked,
       leitorSupervozPrefetchEnabled: supervozPrefetchEnabled.checked
     });
-    diagBackendUrl.textContent = normalized.leitorSupervozApiUrl;
+    diagBackendUrl.textContent = effectiveSupervozApiUrl(normalized) || 'configure a URL Lite';
+    diagProcessingMode.textContent = normalized.leitorSupervozProcessingMode === 'lite' ? 'Modo Lite (CPU)' : 'Modo Ultra (GPU)';
     diagToken.textContent = maskToken(normalized.leitorSupervozApiToken || normalized.leitorHfToken);
     diagProvider.textContent = normalized.leitorTtsProvider;
     diagEndpoint.textContent = diagEndpoint.textContent || '-';

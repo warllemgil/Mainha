@@ -12,7 +12,8 @@
     "*://stecine.azureedge.net/*",
     "*://*.ensineme.com.br/*",
     "https://warllem-supervoz-f5-api.hf.space/*",
-    "https://*.modal.run/*"
+    "https://*.modal.run/*",
+    "https://*.run.app/*"
   ],
   "background": {
     "service_worker": "background.js"
