@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function normalizeApiUrl(value) {
     const fallback = DEFAULT_SUPERVOZ_API_URL;
-    const raw = (value || fallback).trim() || fallback;
+    const raw = cleanConfigValue(value || fallback) || fallback;
     let normalized = raw.replace(/\/+$/, '').replace(/\/(tts|health|voices)$/, '');
     if (LEGACY_SUPERVOZ_API_URLS.includes(normalized)) {
       normalized = DEFAULT_SUPERVOZ_API_URL;
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function normalizeToken(value, apiUrl) {
-    const token = (value || '').trim().replace(/^Bearer\s+/i, '').trim();
+    const token = cleanConfigValue(value).replace(/^Bearer\s+/i, '').trim();
     if (DEFAULT_SUPERVOZ_API_TOKEN && normalizeApiUrl(apiUrl) === DEFAULT_SUPERVOZ_API_URL) {
       return DEFAULT_SUPERVOZ_API_TOKEN;
     }
@@ -178,12 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getDefaultSupervozToken() {
     const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
-    return (defaults.apiToken || '').trim().replace(/^Bearer\s+/i, '').trim();
+    return cleanConfigValue(defaults.apiToken).replace(/^Bearer\s+/i, '').trim();
   }
 
   function getDefaultSupervozUrl() {
     const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
-    return (defaults.apiUrl || '').trim();
+    return cleanConfigValue(defaults.apiUrl);
+  }
+
+  function cleanConfigValue(value) {
+    return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
   }
 
   function testarHealth(apiUrl, token) {

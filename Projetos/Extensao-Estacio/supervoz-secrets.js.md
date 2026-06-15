@@ -17,7 +17,7 @@ O endpoint Modal retorna `HTTP 401` quando `API_AUTH_TOKEN` está ativo e o head
 
 ## Observação
 
-O arquivo versionado mantém `apiToken` vazio para evitar bloqueio do GitHub Push Protection. Em uso local, quando o token é preenchido, `popup.js` e `content.js` normalizam o valor, removem prefixo `Bearer` duplicado e substituem token antigo salvo no Chrome quando a URL é o Modal padrão.
+O arquivo versionado mantém `apiToken` vazio para evitar bloqueio do GitHub Push Protection e já traz a URL Modal padrão. Em uso local, preencha apenas `apiToken` com `API_AUTH_TOKEN`. Quando o token é preenchido, `popup.js` e `content.js` normalizam o valor, removem prefixo `Bearer` duplicado, limpam aspas extras acidentais e substituem token antigo salvo no Chrome quando a URL é o Modal padrão.
 
 Pode ser gerado por:
 

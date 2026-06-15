@@ -409,7 +409,7 @@
   }
 
   function normalizarSupervozApiUrl(value){
-    const configuredUrl = (value || DEFAULT_SUPERVOZ_API_URL).trim();
+    const configuredUrl = limparValorConfiguracao(value || DEFAULT_SUPERVOZ_API_URL);
     let normalized = configuredUrl.replace(/\/+$/, '').replace(/\/(tts|health|voices)$/, '');
     if (LEGACY_SUPERVOZ_API_URLS.includes(normalized)) {
       normalized = DEFAULT_SUPERVOZ_API_URL;
@@ -433,7 +433,7 @@
   }
 
   function normalizarSupervozToken(value, apiUrl){
-    const token = (value || '').trim().replace(/^Bearer\s+/i, '').trim();
+    const token = limparValorConfiguracao(value).replace(/^Bearer\s+/i, '').trim();
     if (DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiUrl(apiUrl) === DEFAULT_SUPERVOZ_API_URL) {
       return DEFAULT_SUPERVOZ_API_TOKEN;
     }
@@ -442,12 +442,16 @@
 
   function obterTokenPadraoSuperVoz(){
     const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
-    return (defaults.apiToken || '').trim().replace(/^Bearer\s+/i, '').trim();
+    return limparValorConfiguracao(defaults.apiToken).replace(/^Bearer\s+/i, '').trim();
   }
 
   function obterUrlPadraoSuperVoz(){
     const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
-    return (defaults.apiUrl || '').trim();
+    return limparValorConfiguracao(defaults.apiUrl);
+  }
+
+  function limparValorConfiguracao(value){
+    return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
   }
 
   function mascararToken(token){

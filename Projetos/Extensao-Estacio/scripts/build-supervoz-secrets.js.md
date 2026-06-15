@@ -23,4 +23,4 @@ node scripts/build-supervoz-secrets.js
 
 ## Observação
 
-O script remove prefixo `Bearer` se ele for passado por engano e grava apenas o token limpo em `supervoz-secrets.js`.
+O script remove prefixo `Bearer` e aspas extras se forem passados por engano, gravando URL/token limpos em `supervoz-secrets.js`.

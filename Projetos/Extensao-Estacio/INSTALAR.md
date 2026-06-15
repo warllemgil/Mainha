@@ -51,7 +51,18 @@ Se aparecer `HTTP 401` ao testar conexão e o diagnóstico mostrar token diferen
 
 Ao clicar Stop, a extensão aborta chamadas pendentes no navegador. Se o Modal já recebeu a requisição `/tts`, a inferência pode continuar até terminar; o backend foi ajustado para desligar poucos segundos depois de ficar ocioso.
 
-Para build local com token:
+O arquivo `supervoz-secrets.js` ja vem com a URL Modal. Para uso local, preencha apenas `apiToken` com o valor de `API_AUTH_TOKEN`, sem `Bearer`:
+
+```js
+globalThis.LEITOR_SUPERVOZ_DEFAULTS = {
+  apiUrl: 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run',
+  apiToken: 'SEU_API_AUTH_TOKEN'
+};
+```
+
+Se voce colar aspas extras por engano no popup, a extensao tenta limpar automaticamente.
+
+Para gerar via comando:
 
 ```bash
 cd Projetos/Extensao-Estacio

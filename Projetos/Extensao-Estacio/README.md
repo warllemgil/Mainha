@@ -111,6 +111,8 @@ MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
 node scripts/build-supervoz-secrets.js
 ```
 
+Para editar manualmente, mantenha a URL padrao e preencha apenas `apiToken` com `API_AUTH_TOKEN`, sem prefixo `Bearer`. A extensao limpa aspas extras acidentais na URL e no token.
+
 Por padrão, a extensão não faz prefetch. Se a opção avançada "Pré-gerar próximo bloco" for ativada, ela pode gerar áudio que talvez não seja ouvido se você parar logo depois. O botão `Testar conexão` chama `/health`; use apenas quando precisar conferir a configuração, porque no deploy Modal atual qualquer rota acorda o container GPU.
 
 ## 🐛 Troubleshooting

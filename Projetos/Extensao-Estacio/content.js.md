@@ -6,6 +6,7 @@
 ## Alteração 2026-06-15 — SuperVoz sem configuração manual
 
 - v1.4.2: `POST /tts` usa timeout, logs mascarados e erros específicos para `401`, `404`, `Failed to fetch` e timeout.
+- URL e token passam por limpeza de aspas simples/duplas extras para evitar chamada a URL inválida como `modal.run"`.
 - O fallback para `speechSynthesis` só acontece quando `leitorSupervozFallbackNative` estiver ativo.
 - Pré-geração de próximo bloco fica desligada por padrão (`leitorSupervozPrefetchEnabled=false`) para evitar custo extra no Modal após Stop/fechamento.
 - O token é lido de `leitorSupervozApiToken` com fallback para `leitorHfToken`, mantendo compatibilidade.

@@ -4,11 +4,15 @@ const path = require('path');
 const extensionDir = path.resolve(__dirname, '..');
 const outputPath = path.join(extensionDir, 'supervoz-secrets.js');
 
-const apiUrl = (process.env.MAINHA_BACKEND_URL || '').trim();
-const apiToken = (process.env.MAINHA_ASSISTANT_TOKEN || process.env.API_AUTH_TOKEN || '').trim();
+const apiUrl = cleanValue(process.env.MAINHA_BACKEND_URL || '');
+const apiToken = cleanValue(process.env.MAINHA_ASSISTANT_TOKEN || process.env.API_AUTH_TOKEN || '');
 
 function jsString(value) {
-  return JSON.stringify(value.replace(/^Bearer\s+/i, '').trim());
+  return JSON.stringify(cleanValue(value).replace(/^Bearer\s+/i, '').trim());
+}
+
+function cleanValue(value) {
+  return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
 }
 
 const contents = `// Gerado por scripts/build-supervoz-secrets.js.
