@@ -4,6 +4,10 @@
 
 ## Alteração 2026-06-15
 
+- v1.4.2: o botão `Testar conexão` usa timeout, mensagens específicas por status HTTP e diagnóstico visível no popup.
+- O endpoint testado é `GET /health`, com header `Authorization: Bearer <API_AUTH_TOKEN>`.
+- Tokens são salvos em `leitorSupervozApiToken` e também em `leitorHfToken` para compatibilidade com versões antigas.
+- O fallback para voz nativa virou opção explícita em `leitorSupervozFallbackNative`.
 - SuperVoz F5 virou o motor padrão.
 - URL Modal fica preenchida automaticamente.
 - Token padrão local é lido de `globalThis.LEITOR_SUPERVOZ_DEFAULTS.apiToken`, definido por `supervoz-secrets.js`.
@@ -30,9 +34,11 @@ Controla a tela que abre ao clicar no ícone da extensão.
 - Salva:
   - `leitorTtsProvider`
   - `leitorSupervozApiUrl`
-  - `leitorHfToken`
+- `leitorHfToken`
+  - `leitorSupervozApiToken`
   - `leitorSupervozMode`
   - `leitorSupervozNfeStep`
+  - `leitorSupervozFallbackNative`
 - Testa o endpoint:
 
 ```text

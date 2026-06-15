@@ -5,14 +5,14 @@
 
 ## Alteração 2026-06-15
 
-- A mensagem de update foi ajustada para `v1.4.1`.
+- A mensagem de update foi ajustada para `v1.4.2`.
 
 ## Responsabilidades Principais
 
 ### `onInstalled`
 - Log de instalação
 - Registra instalação ou atualização
-- A mensagem de update foi ajustada para `v1.4.1`
+- A mensagem de update foi ajustada para `v1.4.2`
 
 ### `onMessage`
 - Placeholder para futuro: `getVoices`

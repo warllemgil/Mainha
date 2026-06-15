@@ -5,6 +5,9 @@
 
 ## Alteração 2026-06-15 — SuperVoz sem configuração manual
 
+- v1.4.2: `POST /tts` usa timeout, logs mascarados e erros específicos para `401`, `404`, `Failed to fetch` e timeout.
+- O fallback para `speechSynthesis` só acontece quando `leitorSupervozFallbackNative` estiver ativo.
+- O token é lido de `leitorSupervozApiToken` com fallback para `leitorHfToken`, mantendo compatibilidade.
 - `supervoz` passou a ser o provedor padrão.
 - URL Modal é preenchida no código da extensão.
 - Token padrão local é lido de `globalThis.LEITOR_SUPERVOZ_DEFAULTS.apiToken`, definido por `supervoz-secrets.js`.
@@ -34,8 +37,10 @@ As configurações vêm de `chrome.storage.local`:
 - `leitorTtsProvider`: `native` ou `supervoz`.
 - `leitorSupervozApiUrl`: URL base da API SuperVoz. Padrao: `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
 - `leitorHfToken`: token usado no header `Authorization: Bearer ...`.
+- `leitorSupervozApiToken`: nome novo do token da API SuperVoz; `leitorHfToken` foi preservado por compatibilidade.
 - `leitorSupervozMode`: `fast`, `balanced` ou `quality`.
 - `leitorSupervozNfeStep`: valor numérico enviado ao servidor.
+- `leitorSupervozFallbackNative`: permite fallback para voz nativa quando a SuperVoz falhar.
 
 Se a SuperVoz falhar ou se o áudio não tocar, o código faz fallback automático para `speechSynthesis`.
 

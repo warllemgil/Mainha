@@ -9,6 +9,7 @@ Define `globalThis.LEITOR_SUPERVOZ_DEFAULTS` antes de `popup.js` e `content.js`.
 ## Campos
 
 - `apiToken`: token Bearer local usado pelo endpoint Modal quando preenchido.
+- `apiUrl`: URL local opcional do backend. Se vazio, a extensão usa o Modal padrão.
 
 ## Motivo
 
@@ -17,3 +18,11 @@ O endpoint Modal retorna `HTTP 401` quando `API_AUTH_TOKEN` está ativo e o head
 ## Observação
 
 O arquivo versionado mantém `apiToken` vazio para evitar bloqueio do GitHub Push Protection. Em uso local, quando o token é preenchido, `popup.js` e `content.js` normalizam o valor, removem prefixo `Bearer` duplicado e substituem token antigo salvo no Chrome quando a URL é o Modal padrão.
+
+Pode ser gerado por:
+
+```bash
+MAINHA_BACKEND_URL="https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run" \
+MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
+node scripts/build-supervoz-secrets.js
+```

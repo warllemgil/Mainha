@@ -47,4 +47,13 @@ Para verificar quais vozes você tem:
 
 No popup, a extensão já vem em `SuperVoz F5` com URL Modal. O token local é carregado de `supervoz-secrets.js` quando preenchido neste ambiente. O padrão atual usa `balanced` com `nfe_step=32` e faz prefetch sequencial de até 3 blocos seguintes durante a leitura.
 
-Se aparecer `HTTP 401` ao testar conexão, recarregue a extensão e abra o popup de novo. A versão `1.4.1` remove `Bearer` duplicado e, quando `supervoz-secrets.js` tem token local, substitui automaticamente tokens antigos/incorretos salvos no Chrome quando a URL é o Modal padrão.
+Se aparecer `HTTP 401` ao testar conexão, recarregue a extensão e abra o popup de novo. A versão `1.4.2` remove `Bearer` duplicado, envia `Authorization: Bearer <API_AUTH_TOKEN>` e mostra no diagnóstico se há token configurado. O fallback para voz nativa só acontece quando a opção "Permitir fallback" estiver marcada.
+
+Para build local com token:
+
+```bash
+cd Projetos/Extensao-Estacio
+MAINHA_BACKEND_URL="https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run" \
+MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
+node scripts/build-supervoz-secrets.js
+```

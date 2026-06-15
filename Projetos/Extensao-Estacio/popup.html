@@ -146,6 +146,40 @@
       gap: 8px;
     }
 
+    .checkbox-row {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-row input {
+      width: auto;
+    }
+
+    .diagnostics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 10px;
+      color: #a0aec0;
+    }
+
+    .diagnostics div {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .diagnostics span:last-child {
+      color: #e0e0e0;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
     .hint {
       font-size: 10px;
       line-height: 1.4;
@@ -225,7 +259,7 @@
         A extensão está funcionando. Acesse qualquer página da Estácio e o player
         flutuante aparecerá no canto inferior direito da tela.
       </div>
-      <div class="success-badge">v1.4.1 · SuperVoz pronta</div>
+      <div class="success-badge">v1.4.2 · SuperVoz diagnosticável</div>
     </div>
 
     <div class="settings">
@@ -242,8 +276,8 @@
         <input id="supervozApiUrl" type="url" placeholder="https://...modal.run" autocomplete="off">
       </label>
       <label>
-        Token da API embutido
-        <input id="hfToken" type="password" placeholder="Configurado automaticamente" autocomplete="off">
+        Token da API
+        <input id="hfToken" type="password" placeholder="Configurado por build/local" autocomplete="off">
       </label>
       <div class="settings-row">
         <label>
@@ -259,12 +293,24 @@
           <input id="supervozNfeStep" type="number" min="4" max="64" step="1" value="8">
         </label>
       </div>
+      <label class="checkbox-row">
+        <input id="supervozFallbackNative" type="checkbox">
+        Permitir fallback para voz nativa se a SuperVoz falhar
+      </label>
       <div class="hint">
-        A extensão já vem apontada para o Modal GPU. Use este painel apenas para trocar endpoint, modo ou token.
+        A extensão usa Authorization: Bearer no Modal GPU. O campo de token é avançado e pode vir pré-configurado por build/local.
       </div>
       <button class="btn-primary" id="saveSettings">Salvar voz</button>
       <button class="btn-secondary" id="testSupervoz">Testar conexão</button>
       <div id="settingsStatus"></div>
+      <div class="diagnostics">
+        <div><span>Backend</span><span id="diagBackendUrl">-</span></div>
+        <div><span>Token</span><span id="diagToken">-</span></div>
+        <div><span>Motor</span><span id="diagProvider">-</span></div>
+        <div><span>Endpoint</span><span id="diagEndpoint">-</span></div>
+        <div><span>/health</span><span id="diagHealth">-</span></div>
+        <div><span>Último erro</span><span id="diagLastError">-</span></div>
+      </div>
     </div>
 
     <div class="instructions">
@@ -288,7 +334,7 @@
     </div>
 
     <div class="version">
-      Leitor Estácio v1.4.1
+      Leitor Estácio v1.4.2
     </div>
   </div>
 

@@ -3,7 +3,13 @@
 **Última atualização:** 2026-06-15
 
 ## Versão
-`"version": "1.4.1"`
+`"version": "1.4.2"`
+
+## Alteração 2026-06-15 v1.4.2
+
+- Versão atualizada para `1.4.2`.
+- `content_scripts.js` continua carregando `supervoz-secrets.js` antes de `content.js`.
+- A correção de auth usa o header `Authorization: Bearer <API_AUTH_TOKEN>`, confirmado pelo backend FastAPI.
 
 ## Alteração 2026-06-15
 

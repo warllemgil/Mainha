@@ -1,0 +1,23 @@
+const fs = require('fs');
+const path = require('path');
+
+const extensionDir = path.resolve(__dirname, '..');
+const outputPath = path.join(extensionDir, 'supervoz-secrets.js');
+
+const apiUrl = (process.env.MAINHA_BACKEND_URL || '').trim();
+const apiToken = (process.env.MAINHA_ASSISTANT_TOKEN || process.env.API_AUTH_TOKEN || '').trim();
+
+function jsString(value) {
+  return JSON.stringify(value.replace(/^Bearer\s+/i, '').trim());
+}
+
+const contents = `// Gerado por scripts/build-supervoz-secrets.js.
+// Nao commite tokens reais.
+globalThis.LEITOR_SUPERVOZ_DEFAULTS = {
+  apiUrl: ${jsString(apiUrl)},
+  apiToken: ${jsString(apiToken)}
+};
+`;
+
+fs.writeFileSync(outputPath, contents, 'utf8');
+console.log(`supervoz-secrets.js gerado. apiUrl=${apiUrl ? 'sim' : 'nao'} apiToken=${apiToken ? 'sim' : 'nao'}`);

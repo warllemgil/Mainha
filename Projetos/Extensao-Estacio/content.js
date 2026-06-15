@@ -143,11 +143,12 @@
   const audioFetchesEmAndamento = new Map();
   const AUDIO_CACHE_MAX_ITEMS = 30;
   const SUPERVOZ_PREFETCH_AHEAD = 3;
+  const SUPERVOZ_TTS_TIMEOUT_MS = 240000;
   let prefetchAtivo = false;
   let velocidadeIndex = 1;
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
-  const DEFAULT_SUPERVOZ_API_URL = 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const DEFAULT_SUPERVOZ_API_URL = obterUrlPadraoSuperVoz() || 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
   const LEGACY_SUPERVOZ_API_URLS = [
     'https://warllem-supervoz-f5-api.hf.space'
   ];
@@ -156,8 +157,10 @@
     leitorTtsProvider: 'supervoz',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
     leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
+    leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
-    leitorSupervozNfeStep: 32
+    leitorSupervozNfeStep: 32,
+    leitorSupervozFallbackNative: false
   };
   let leitorSettings = Object.assign({}, DEFAULT_SETTINGS);
   
@@ -416,10 +419,14 @@
   function normalizarConfiguracoes(settings){
     const normalized = Object.assign({}, DEFAULT_SETTINGS, settings || {});
     normalized.leitorSupervozApiUrl = normalizarSupervozApiUrl(normalized.leitorSupervozApiUrl);
-    normalized.leitorHfToken = normalizarSupervozToken(normalized.leitorHfToken, normalized.leitorSupervozApiUrl);
+    const configuredToken = normalized.leitorSupervozApiToken || normalized.leitorHfToken;
+    const token = normalizarSupervozToken(configuredToken, normalized.leitorSupervozApiUrl);
+    normalized.leitorHfToken = token;
+    normalized.leitorSupervozApiToken = token;
     normalized.leitorTtsProvider = normalized.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
     normalized.leitorSupervozMode = normalized.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
+    normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
     return normalized;
   }
 
@@ -434,6 +441,65 @@
   function obterTokenPadraoSuperVoz(){
     const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
     return (defaults.apiToken || '').trim().replace(/^Bearer\s+/i, '').trim();
+  }
+
+  function obterUrlPadraoSuperVoz(){
+    const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
+    return (defaults.apiUrl || '').trim();
+  }
+
+  function mascararToken(token){
+    if (!token) return 'nao';
+    return `${token.slice(0, 4)}...${token.length}`;
+  }
+
+  function registrarSupervoz(endpoint, status){
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    log('[SuperVoz]', {
+      url: normalizarSupervozApiBaseUrl(),
+      endpoint,
+      status: status || 'iniciando',
+      token: mascararToken(token)
+    });
+  }
+
+  function mensagemErroSuperVoz(error){
+    if (!error) return 'Erro desconhecido na SuperVoz.';
+    if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.code === 'timeout') return 'Timeout: Backend demorou para responder.';
+    if (error.status === 401) return 'HTTP 401: Token inválido ou ausente. Verifique API_AUTH_TOKEN.';
+    if (error.status === 404) return 'HTTP 404: Endpoint não encontrado. Verifique a rota da API.';
+    if (error.status) return `HTTP ${error.status}: Falha no backend SuperVoz.`;
+    if (/Failed to fetch/i.test(error.message || '')) return 'Failed to fetch: API offline, CORS ou URL incorreta.';
+    return error.message || 'Falha no backend SuperVoz.';
+  }
+
+  function criarErroHttpSuperVoz(status){
+    const error = new Error(mensagemErroSuperVoz({status}));
+    error.status = status;
+    return error;
+  }
+
+  function criarSignalComTimeout(signal, timeoutMs){
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      const error = new Error('Timeout: Backend demorou para responder.');
+      error.name = 'TimeoutError';
+      error.code = 'timeout';
+      try { controller.abort(error); } catch(_) { controller.abort(); }
+    }, timeoutMs);
+
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort(signal.reason);
+      } else {
+        signal.addEventListener('abort', () => controller.abort(signal.reason), {once: true});
+      }
+    }
+
+    return {
+      signal: controller.signal,
+      clear: () => clearTimeout(timeoutId)
+    };
   }
 
   function salvarAudioNoCache(chave, blob){
@@ -461,6 +527,9 @@
       return fetchExistente;
     }
 
+    const timeout = criarSignalComTimeout(signal, SUPERVOZ_TTS_TIMEOUT_MS);
+    registrarSupervoz('/tts');
+
     const requestPromise = fetch(`${normalizarSupervozApiBaseUrl()}/tts`, {
       method: 'POST',
       headers: montarHeadersSuperVoz(),
@@ -471,21 +540,31 @@
         mode: leitorSettings.leitorSupervozMode || 'fast',
         nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
       }),
-      signal
+      signal: timeout.signal
     }).then(async (response) => {
+      registrarSupervoz('/tts', response.status);
       if (response.status === 401 && DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiBaseUrl() === DEFAULT_SUPERVOZ_API_URL) {
         leitorSettings.leitorHfToken = DEFAULT_SUPERVOZ_API_TOKEN;
+        leitorSettings.leitorSupervozApiToken = DEFAULT_SUPERVOZ_API_TOKEN;
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN });
+          chrome.storage.local.set({
+            leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
+            leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN
+          });
         }
       }
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw criarErroHttpSuperVoz(response.status);
+      }
+      const contentType = response.headers.get('Content-Type') || '';
+      if (!/audio\/wav|audio\/mpeg|application\/octet-stream/i.test(contentType)) {
+        throw new Error(`Resposta inválida da SuperVoz: ${contentType || 'sem Content-Type'}`);
       }
       const blob = await response.blob();
       salvarAudioNoCache(chave, blob);
       return blob;
     }).finally(() => {
+      timeout.clear();
       audioFetchesEmAndamento.delete(chave);
     });
 
@@ -631,7 +710,14 @@
         log('erro ao tocar audio SuperVoz');
         if (sequenciaLocal !== leituraSequencia) return;
         limparAudioAtual();
-        falarNativo(bloco, sequenciaLocal);
+        if (leitorSettings.leitorSupervozFallbackNative) {
+          status.textContent = 'SuperVoz não tocou; usando voz nativa';
+          falarNativo(bloco, sequenciaLocal);
+          return;
+        }
+        status.textContent = 'Erro ao tocar áudio SuperVoz';
+        lendo = false;
+        btnPlay.textContent = '▶';
       };
 
       status.textContent = `Lendo SuperVoz (${indiceAtual+1}/${blocos.length})`;
@@ -639,17 +725,24 @@
       await audioAtual.play();
       preCarregarProximoBloco();
     } catch (err) {
-      if (err && err.name === 'AbortError') return;
-      log('falha SuperVoz, usando voz nativa', err);
+      if (err && err.name === 'AbortError' && sequenciaLocal !== leituraSequencia) return;
+      const mensagem = mensagemErroSuperVoz(err);
+      log('falha SuperVoz', mensagem, err);
       if (sequenciaLocal !== leituraSequencia) return;
-      status.textContent = 'SuperVoz falhou; usando voz nativa';
-      falarNativo(bloco, sequenciaLocal);
+      if (leitorSettings.leitorSupervozFallbackNative) {
+        status.textContent = `${mensagem} Usando voz nativa.`;
+        falarNativo(bloco, sequenciaLocal);
+        return;
+      }
+      status.textContent = mensagem;
+      lendo = false;
+      btnPlay.textContent = '▶';
     }
   }
 
   function montarHeadersSuperVoz(){
     const headers = {'Content-Type': 'application/json'};
-    const token = normalizarSupervozToken(leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
     if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
   }

@@ -11,10 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const hfToken = document.getElementById('hfToken');
   const supervozMode = document.getElementById('supervozMode');
   const supervozNfeStep = document.getElementById('supervozNfeStep');
+  const supervozFallbackNative = document.getElementById('supervozFallbackNative');
   const saveSettings = document.getElementById('saveSettings');
   const testSupervoz = document.getElementById('testSupervoz');
   const settingsStatus = document.getElementById('settingsStatus');
-  const DEFAULT_SUPERVOZ_API_URL = 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const diagBackendUrl = document.getElementById('diagBackendUrl');
+  const diagToken = document.getElementById('diagToken');
+  const diagProvider = document.getElementById('diagProvider');
+  const diagEndpoint = document.getElementById('diagEndpoint');
+  const diagHealth = document.getElementById('diagHealth');
+  const diagLastError = document.getElementById('diagLastError');
+  const DEFAULT_SUPERVOZ_API_URL = getDefaultSupervozUrl() || 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const HEALTH_TIMEOUT_MS = 20000;
   const LEGACY_SUPERVOZ_API_URLS = [
     'https://warllem-supervoz-f5-api.hf.space'
   ];
@@ -24,8 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
     leitorTtsProvider: 'supervoz',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
     leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
+    leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
-    leitorSupervozNfeStep: 32
+    leitorSupervozNfeStep: 32,
+    leitorSupervozFallbackNative: false
   };
 
   function setStatus(message, isError = false) {
@@ -41,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hfToken.value = settings.leitorHfToken;
     supervozMode.value = settings.leitorSupervozMode;
     supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
+    supervozFallbackNative.checked = settings.leitorSupervozFallbackNative === true;
+    updateDiagnostics(settings);
   });
 
   // Abre a página de configurações (neste caso, abre INSTALAR.md)
@@ -62,13 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
       leitorTtsProvider: ttsProvider.value,
       leitorSupervozApiUrl: normalizeApiUrl(supervozApiUrl.value),
       leitorHfToken: hfToken.value,
+      leitorSupervozApiToken: hfToken.value,
       leitorSupervozMode: supervozMode.value,
-      leitorSupervozNfeStep: nfeStep
+      leitorSupervozNfeStep: nfeStep,
+      leitorSupervozFallbackNative: supervozFallbackNative.checked
     });
     chrome.storage.local.set(settings, () => {
       supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
       supervozApiUrl.value = settings.leitorSupervozApiUrl;
       hfToken.value = settings.leitorHfToken;
+      supervozFallbackNative.checked = settings.leitorSupervozFallbackNative === true;
+      updateDiagnostics(settings);
       setStatus('Configuração salva.');
     });
   });
@@ -78,21 +94,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = normalizeToken(hfToken.value, apiUrl);
 
     setStatus('Testando...');
+    updateDiagnosticsFromForm({endpoint: '/health', health: 'testando', lastError: '-'});
+    logRequest('/health', apiUrl, token);
     try {
       let response = await testarHealth(apiUrl, token);
       if (response.status === 401 && DEFAULT_SUPERVOZ_API_TOKEN && apiUrl === DEFAULT_SUPERVOZ_API_URL) {
         hfToken.value = DEFAULT_SUPERVOZ_API_TOKEN;
-        chrome.storage.local.set({ leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN });
+        chrome.storage.local.set({
+          leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
+          leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN
+        });
         response = await testarHealth(apiUrl, DEFAULT_SUPERVOZ_API_TOKEN);
       }
+      console.log('[Popup][SuperVoz]', {
+        url: apiUrl,
+        endpoint: '/health',
+        status: response.status,
+        token: maskToken(token || DEFAULT_SUPERVOZ_API_TOKEN)
+      });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw createHttpError(response.status);
       }
       const data = await response.json();
       setStatus(`OK: ${data.status}, ${data.device}, model_loaded=${data.model_loaded}`);
+      updateDiagnosticsFromForm({
+        endpoint: '/health',
+        health: `${data.status}, ${data.device}, auth=${data.auth_enabled}`,
+        lastError: '-'
+      });
     } catch (error) {
-      setStatus(`Falha: ${error.message}`, true);
+      const message = friendlyError(error);
+      setStatus(`Falha: ${message}`, true);
+      updateDiagnosticsFromForm({
+        endpoint: '/health',
+        health: 'falhou',
+        lastError: message
+      });
     }
+  });
+
+  [ttsProvider, supervozApiUrl, hfToken, supervozMode, supervozNfeStep, supervozFallbackNative].forEach((element) => {
+    element.addEventListener('change', () => updateDiagnosticsFromForm());
+    element.addEventListener('input', () => updateDiagnosticsFromForm());
   });
 
   function normalizeApiUrl(value) {
@@ -108,10 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function normalizeSettings(items) {
     const normalized = Object.assign({}, DEFAULT_SETTINGS, items || {});
     normalized.leitorSupervozApiUrl = normalizeApiUrl(normalized.leitorSupervozApiUrl);
-    normalized.leitorHfToken = normalizeToken(normalized.leitorHfToken, normalized.leitorSupervozApiUrl);
+    const configuredToken = normalized.leitorSupervozApiToken || normalized.leitorHfToken;
+    const token = normalizeToken(configuredToken, normalized.leitorSupervozApiUrl);
+    normalized.leitorHfToken = token;
+    normalized.leitorSupervozApiToken = token;
     normalized.leitorTtsProvider = normalized.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
     normalized.leitorSupervozMode = normalized.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
+    normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
     return normalized;
   }
 
@@ -128,9 +175,74 @@ document.addEventListener('DOMContentLoaded', () => {
     return (defaults.apiToken || '').trim().replace(/^Bearer\s+/i, '').trim();
   }
 
+  function getDefaultSupervozUrl() {
+    const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
+    return (defaults.apiUrl || '').trim();
+  }
+
   function testarHealth(apiUrl, token) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
     return fetch(`${apiUrl}/health`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+      headers: buildAuthHeaders(token),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
+  }
+
+  function buildAuthHeaders(token) {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function createHttpError(status) {
+    const error = new Error(`HTTP ${status}`);
+    error.status = status;
+    return error;
+  }
+
+  function friendlyError(error) {
+    if (!error) return 'Erro desconhecido.';
+    if (error.name === 'AbortError') return 'Timeout: Backend demorou para responder.';
+    if (error.status === 401) return 'HTTP 401: Token inválido ou ausente. Verifique API_AUTH_TOKEN.';
+    if (error.status === 404) return 'HTTP 404: Endpoint não encontrado. Verifique a rota da API.';
+    if (/Failed to fetch/i.test(error.message || '')) return 'Failed to fetch: API offline, CORS ou URL incorreta.';
+    if (error.status) return `HTTP ${error.status}: Falha no backend SuperVoz.`;
+    return error.message || String(error);
+  }
+
+  function maskToken(token) {
+    if (!token) return 'não';
+    return `${token.slice(0, 4)}...${token.length}`;
+  }
+
+  function updateDiagnostics(settings) {
+    const normalized = normalizeSettings(settings || {
+      leitorTtsProvider: ttsProvider.value,
+      leitorSupervozApiUrl: supervozApiUrl.value,
+      leitorHfToken: hfToken.value,
+      leitorSupervozApiToken: hfToken.value,
+      leitorSupervozMode: supervozMode.value,
+      leitorSupervozNfeStep: supervozNfeStep.value,
+      leitorSupervozFallbackNative: supervozFallbackNative.checked
+    });
+    diagBackendUrl.textContent = normalized.leitorSupervozApiUrl;
+    diagToken.textContent = maskToken(normalized.leitorSupervozApiToken || normalized.leitorHfToken);
+    diagProvider.textContent = normalized.leitorTtsProvider;
+    diagEndpoint.textContent = diagEndpoint.textContent || '-';
+  }
+
+  function updateDiagnosticsFromForm(extra = {}) {
+    updateDiagnostics();
+    if (extra.endpoint !== undefined) diagEndpoint.textContent = extra.endpoint;
+    if (extra.health !== undefined) diagHealth.textContent = extra.health;
+    if (extra.lastError !== undefined) diagLastError.textContent = extra.lastError;
+  }
+
+  function logRequest(endpoint, apiUrl, token) {
+    console.log('[Popup][SuperVoz]', {
+      url: apiUrl,
+      endpoint,
+      status: 'iniciando',
+      token: maskToken(token)
     });
   }
 

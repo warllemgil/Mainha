@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Leitor Estácio",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Lê páginas da web em voz alta com voz nativa ou SuperVoz F5",
   "permissions": ["activeTab", "scripting", "storage", "offscreen"],
   "host_permissions": [
