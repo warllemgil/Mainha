@@ -104,3 +104,34 @@ speechSynthesis.getVoices()
 - A extensão agora injeta em `http://*/*` e `https://*/*`.
 - Se o player não aparecer, confirme se a página não é `chrome://`, Chrome Web Store, PDF sem texto selecionável ou página protegida pelo navegador.
 - A SuperVoz usa prefetch sequencial de até 3 blocos. Se houver pausa, veja no console logs `[Leitor]` relacionados a `prefetch SuperVoz`.
+
+## Atualização 2026-06-15 — HTTP 401 no Modal
+
+Quando o popup mostra token mascarado, por exemplo:
+
+```text
+Token a969...32
+Último erro HTTP 401
+```
+
+e os logs do Modal mostram:
+
+```text
+Auth GET /health token=a969...32 expected=hf_N...37
+Auth POST /tts token=a969...32 expected=hf_N...37
+```
+
+a extensão está enviando token. O erro é divergência entre o token salvo/carregado na extensão e o valor real do secret `API_AUTH_TOKEN` ativo no Modal.
+
+Correção:
+
+1. No site do Modal, abra o secret `supervoz-f5-secrets`.
+2. Atualize `API_AUTH_TOKEN` para o mesmo valor usado em `supervoz-secrets.js`/popup.
+3. Faça redeploy do app Modal:
+
+```bash
+cd SuperVoz-F5-Space
+modal deploy modal_app.py
+```
+
+O valor correto é o token completo, não apenas o prefixo exibido no diagnóstico. O prefixo/tamanho servem apenas para comparar sem expor segredo.

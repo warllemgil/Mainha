@@ -157,6 +157,14 @@ Depois do deploy, copie a URL `https://...modal.run`, abra o popup da extensao, 
 
 Observacao: clicar em `Testar conexao` chama `/health` e pode acordar o container GPU por alguns segundos, mas nao carrega o modelo. Para nao acordar o Modal antes da leitura, apenas salve a URL/token e clique Play na aula.
 
+Se aparecer `HTTP 401`, compare os logs:
+
+```text
+Auth POST /tts token=xxxx...NN expected=yyyy...MM
+```
+
+Se `token` e `expected` forem diferentes, o problema nao e CORS nem rota. Atualize o secret `API_AUTH_TOKEN` do Modal ou o token configurado na extensao para que ambos sejam exatamente iguais.
+
 Observacao de custo: durante uma leitura ativa, a extensao pode gerar ate 3 blocos seguintes em sequencia. Ela nao dispara inferencias paralelas, mas pode gerar audio que o usuario talvez nao ouca se parar logo em seguida. O Stop e a troca de pagina abortam o prefetch local.
 
 Resumo:

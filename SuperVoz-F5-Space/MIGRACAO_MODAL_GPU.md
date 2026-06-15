@@ -129,6 +129,14 @@ API_AUTH_TOKEN
 
 O backend valida esse token antes de carregar/gerar áudio. O header principal é `Authorization: Bearer <API_AUTH_TOKEN>`; `X-API-Token` e `x-api-key` são aceitos apenas como compatibilidade.
 
+Diagnostico de `401`: os logs do backend imprimem token recebido e esperado de forma mascarada:
+
+```text
+Auth GET /health token=a969...32 expected=hf_N...37
+```
+
+Nesse caso a requisicao chegou com token, mas o secret ativo do Modal espera outro valor. A extensao e o Modal precisam usar exatamente o mesmo `API_AUTH_TOKEN`.
+
 Comando sugerido:
 
 ```bash
