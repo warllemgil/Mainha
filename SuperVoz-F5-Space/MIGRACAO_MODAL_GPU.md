@@ -114,7 +114,7 @@ Atualizacao em 2026-06-14:
 - Deploy ativo em `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
 - Voz mantida no bucket `https://huggingface.co/buckets/warllem/Voz_Noslen`.
 - `requirements-modal.txt` fixa `f5-tts==1.1.9`; `torchcodec` foi removido porque quebrou a inferencia no container CUDA atual.
-- `modal_app.py` usa `scaledown_window=60` para evitar cold start entre blocos durante leitura ativa.
+- `modal_app.py` usa `scaledown_window=5` para reduzir tempo ocioso/custo depois de Stop, fechamento do navegador ou erro de autenticação.
 - `f5_engine.py` normaliza o WAV final quando o pico passa do limite configurado.
 - A extensao usa prefetch sequencial de ate 3 blocos seguintes, sem inferencias paralelas.
 
@@ -211,7 +211,7 @@ O app usa:
 - logs: `/cache/logs`.
 - preload no startup: desativado;
 - diagnostico remoto no startup: desativado;
-- `scaledown_window`: `60` segundos para evitar desligamento durante leitura ativa sem manter GPU ligada por muito tempo.
+- `scaledown_window`: `5` segundos para reduzir custo quando a leitura para. Isso pode aumentar chance de cold start entre blocos se o prefetch estiver desligado.
 
 Para economizar credito, evite usar `Testar conexao` repetidamente. A extensao chama `POST /tts` quando o usuario clica Play com `SuperVoz F5` selecionado e pode pregerar ate 3 blocos seguintes em sequencia. Ao clicar Stop, trocar de rota ou fechar a pagina, a extensao aborta a chamada local; o container Modal encerra apos ficar ocioso.
 

@@ -27,7 +27,7 @@ API FastAPI para rodar F5-TTS em Hugging Face Spaces com Docker.
 - GPU: `T4`
 - `SUPERVOZ_PRELOAD_ON_STARTUP=false`
 - `SUPERVOZ_STARTUP_DIAGNOSTIC=false`
-- `scaledown_window=60`
+- `scaledown_window=5`
 - Dependência Modal fixada em `f5-tts==1.1.9`, alinhada ao fluxo testado no Kaggle.
 - O servidor normaliza o WAV quando o pico passa do limite configurado, reduzindo risco de clipping/voz estourada.
 
@@ -142,7 +142,7 @@ Implementacao inicial adicionada em 2026-06-13:
 - `requirements-modal.txt`: dependencias do container Modal sem reinstalar `torch` CPU por cima do PyTorch CUDA.
 - `app.py`: aceita `API_AUTH_TOKEN` opcional via Bearer token e usa diretorios configuraveis para log/cache/output.
 - Extensao Estacio: popup agora aceita `URL da API SuperVoz`, permitindo trocar do Space para o endpoint Modal sem editar codigo.
-- Economia de credito: no Modal, `SUPERVOZ_PRELOAD_ON_STARTUP=false`, `SUPERVOZ_STARTUP_DIAGNOSTIC=false` e `scaledown_window=60`. O modelo so e carregado em `POST /tts`, nao no boot nem em `/health`.
+- Economia de credito: no Modal, `SUPERVOZ_PRELOAD_ON_STARTUP=false`, `SUPERVOZ_STARTUP_DIAGNOSTIC=false` e `scaledown_window=5`. O modelo so e carregado em `POST /tts`, nao no boot nem em `/health`.
 - Qualidade/continuidade em 2026-06-14: extensão usa `balanced`, `nfe_step=32`, prefetch sequencial de até 3 blocos e backend com normalização de pico.
 
 Comandos esperados apos autenticar o CLI do Modal:
@@ -155,7 +155,7 @@ modal deploy modal_app.py
 
 Depois do deploy, copie a URL `https://...modal.run`, abra o popup da extensao, cole em `URL da API SuperVoz`, informe o mesmo `API_AUTH_TOKEN`, salve e teste a conexao.
 
-Observacao: clicar em `Testar conexao` chama `/health` e pode acordar o container por alguns segundos, mas nao carrega o modelo. Para nao acordar o Modal antes da leitura, apenas salve a URL/token e clique Play na aula.
+Observacao: clicar em `Testar conexao` chama `/health` e pode acordar o container GPU por alguns segundos, mas nao carrega o modelo. Para nao acordar o Modal antes da leitura, apenas salve a URL/token e clique Play na aula.
 
 Observacao de custo: durante uma leitura ativa, a extensao pode gerar ate 3 blocos seguintes em sequencia. Ela nao dispara inferencias paralelas, mas pode gerar audio que o usuario talvez nao ouca se parar logo em seguida. O Stop e a troca de pagina abortam o prefetch local.
 

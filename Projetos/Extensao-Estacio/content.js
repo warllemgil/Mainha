@@ -142,7 +142,7 @@
   const audioCache = new Map();
   const audioFetchesEmAndamento = new Map();
   const AUDIO_CACHE_MAX_ITEMS = 30;
-  const SUPERVOZ_PREFETCH_AHEAD = 3;
+  const SUPERVOZ_PREFETCH_AHEAD = 0;
   const SUPERVOZ_TTS_TIMEOUT_MS = 240000;
   let prefetchAtivo = false;
   let velocidadeIndex = 1;
@@ -160,7 +160,8 @@
     leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
     leitorSupervozNfeStep: 32,
-    leitorSupervozFallbackNative: false
+    leitorSupervozFallbackNative: false,
+    leitorSupervozPrefetchEnabled: false
   };
   let leitorSettings = Object.assign({}, DEFAULT_SETTINGS);
   
@@ -427,6 +428,7 @@
     normalized.leitorSupervozMode = normalized.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
     normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
+    normalized.leitorSupervozPrefetchEnabled = normalized.leitorSupervozPrefetchEnabled === true;
     return normalized;
   }
 
@@ -574,6 +576,7 @@
 
   async function preCarregarProximoBloco(){
     if (leitorSettings.leitorTtsProvider !== 'supervoz') return;
+    if (!leitorSettings.leitorSupervozPrefetchEnabled) return;
     if (prefetchAtivo) return;
 
     const primeiroIndice = indiceAtual + 1;

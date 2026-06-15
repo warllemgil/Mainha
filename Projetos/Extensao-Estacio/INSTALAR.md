@@ -45,9 +45,11 @@ Para verificar quais vozes você tem:
 
 ## Usar a voz treinada
 
-No popup, a extensão já vem em `SuperVoz F5` com URL Modal. O token local é carregado de `supervoz-secrets.js` quando preenchido neste ambiente. O padrão atual usa `balanced` com `nfe_step=32` e faz prefetch sequencial de até 3 blocos seguintes durante a leitura.
+No popup, a extensão já vem em `SuperVoz F5` com URL Modal. O token local é carregado de `supervoz-secrets.js` quando preenchido neste ambiente. O padrão atual usa `balanced` com `nfe_step=32`. A pré-geração de próximo bloco fica desligada por padrão para evitar custo no Modal.
 
-Se aparecer `HTTP 401` ao testar conexão, recarregue a extensão e abra o popup de novo. A versão `1.4.2` remove `Bearer` duplicado, envia `Authorization: Bearer <API_AUTH_TOKEN>` e mostra no diagnóstico se há token configurado. O fallback para voz nativa só acontece quando a opção "Permitir fallback" estiver marcada.
+Se aparecer `HTTP 401` ao testar conexão e o diagnóstico mostrar token diferente do token local esperado, a extensão carregada no Chrome não está usando o `supervoz-secrets.js` preenchido ou está com storage antigo. Recarregue a extensão em `chrome://extensions`, abra o popup e salve novamente. A versão `1.4.2` remove `Bearer` duplicado, envia `Authorization: Bearer <API_AUTH_TOKEN>` e mostra no diagnóstico se há token configurado.
+
+Ao clicar Stop, a extensão aborta chamadas pendentes no navegador. Se o Modal já recebeu a requisição `/tts`, a inferência pode continuar até terminar; o backend foi ajustado para desligar poucos segundos depois de ficar ocioso.
 
 Para build local com token:
 

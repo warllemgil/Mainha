@@ -8,6 +8,7 @@
 - O endpoint testado é `GET /health`, com header `Authorization: Bearer <API_AUTH_TOKEN>`.
 - Tokens são salvos em `leitorSupervozApiToken` e também em `leitorHfToken` para compatibilidade com versões antigas.
 - O fallback para voz nativa virou opção explícita em `leitorSupervozFallbackNative`.
+- A pré-geração virou opção explícita em `leitorSupervozPrefetchEnabled`, padrão `false`.
 - SuperVoz F5 virou o motor padrão.
 - URL Modal fica preenchida automaticamente.
 - Token padrão local é lido de `globalThis.LEITOR_SUPERVOZ_DEFAULTS.apiToken`, definido por `supervoz-secrets.js`.
@@ -39,6 +40,7 @@ Controla a tela que abre ao clicar no ícone da extensão.
   - `leitorSupervozMode`
   - `leitorSupervozNfeStep`
   - `leitorSupervozFallbackNative`
+  - `leitorSupervozPrefetchEnabled`
 - Testa o endpoint:
 
 ```text

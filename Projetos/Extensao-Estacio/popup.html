@@ -297,8 +297,12 @@
         <input id="supervozFallbackNative" type="checkbox">
         Permitir fallback para voz nativa se a SuperVoz falhar
       </label>
+      <label class="checkbox-row">
+        <input id="supervozPrefetchEnabled" type="checkbox">
+        Pré-gerar próximo bloco durante a leitura
+      </label>
       <div class="hint">
-        A extensão usa Authorization: Bearer no Modal GPU. O campo de token é avançado e pode vir pré-configurado por build/local.
+        A extensão usa Authorization: Bearer no Modal GPU. Pré-geração fica desligada por padrão para evitar custo se você parar a leitura.
       </div>
       <button class="btn-primary" id="saveSettings">Salvar voz</button>
       <button class="btn-secondary" id="testSupervoz">Testar conexão</button>

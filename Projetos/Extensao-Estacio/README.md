@@ -5,6 +5,7 @@ Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do naveg
 ## ✨ Principais Correções (v1.4)
 
 - ✅ **v1.4.2: Auth e diagnóstico SuperVoz** — O popup mostra diagnóstico de backend, token, motor, endpoint, `/health` e último erro. O fallback para voz nativa só ocorre se a opção manual estiver ativada.
+- ✅ **Custo Modal reduzido** — A pré-geração de blocos fica desligada por padrão. O botão Stop aborta chamadas pendentes no navegador, mas uma inferência já recebida pelo Modal pode terminar no servidor; por isso o backend foi ajustado para encerrar o container após poucos segundos ocioso.
 - ✅ **Header confirmado** — O backend Modal usa `Authorization: Bearer <API_AUTH_TOKEN>` via `HTTPBearer`. As rotas reais são `GET /health`, `GET /voices` e `POST /tts`; `/synthesize`, `/api/tts` e `/generate` não existem e retornam `404`.
 - ✅ **v1.4.1: SuperVoz pronta para uso local** — A extensão agora usa SuperVoz como padrão, carrega `supervoz-secrets.js` antes de `content.js`/`popup.js` e migra automaticamente a URL antiga do Hugging Face Space que retorna `404`.
 - ✅ **Correção de HTTP 401** — A extensão normaliza tokens salvos no Chrome e remove prefixo `Bearer` duplicado. Quando `supervoz-secrets.js` tem token local preenchido e a URL é o Modal padrão, esse token local sobrescreve valores antigos/incorretos.
@@ -110,7 +111,7 @@ MAINHA_ASSISTANT_TOKEN="SEU_API_AUTH_TOKEN" \
 node scripts/build-supervoz-secrets.js
 ```
 
-Para reduzir pausas, a extensão faz prefetch sequencial de até 3 blocos seguintes enquanto o áudio atual toca. Ela não dispara 3 inferências em paralelo; gera um bloco por vez para evitar múltiplos containers e gasto inesperado. O botão `Testar conexao` chama `/health`; use apenas quando precisar conferir a configuração.
+Por padrão, a extensão não faz prefetch. Se a opção avançada "Pré-gerar próximo bloco" for ativada, ela pode gerar áudio que talvez não seja ouvido se você parar logo depois. O botão `Testar conexão` chama `/health`; use apenas quando precisar conferir a configuração, porque no deploy Modal atual qualquer rota acorda o container GPU.
 
 ## 🐛 Troubleshooting
 

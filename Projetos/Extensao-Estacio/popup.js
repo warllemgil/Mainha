@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const supervozMode = document.getElementById('supervozMode');
   const supervozNfeStep = document.getElementById('supervozNfeStep');
   const supervozFallbackNative = document.getElementById('supervozFallbackNative');
+  const supervozPrefetchEnabled = document.getElementById('supervozPrefetchEnabled');
   const saveSettings = document.getElementById('saveSettings');
   const testSupervoz = document.getElementById('testSupervoz');
   const settingsStatus = document.getElementById('settingsStatus');
@@ -35,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
     leitorSupervozNfeStep: 32,
-    leitorSupervozFallbackNative: false
+    leitorSupervozFallbackNative: false,
+    leitorSupervozPrefetchEnabled: false
   };
 
   function setStatus(message, isError = false) {
@@ -52,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     supervozMode.value = settings.leitorSupervozMode;
     supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
     supervozFallbackNative.checked = settings.leitorSupervozFallbackNative === true;
+    supervozPrefetchEnabled.checked = settings.leitorSupervozPrefetchEnabled === true;
     updateDiagnostics(settings);
   });
 
@@ -77,13 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
       leitorSupervozApiToken: hfToken.value,
       leitorSupervozMode: supervozMode.value,
       leitorSupervozNfeStep: nfeStep,
-      leitorSupervozFallbackNative: supervozFallbackNative.checked
+      leitorSupervozFallbackNative: supervozFallbackNative.checked,
+      leitorSupervozPrefetchEnabled: supervozPrefetchEnabled.checked
     });
     chrome.storage.local.set(settings, () => {
       supervozNfeStep.value = String(settings.leitorSupervozNfeStep);
       supervozApiUrl.value = settings.leitorSupervozApiUrl;
       hfToken.value = settings.leitorHfToken;
       supervozFallbackNative.checked = settings.leitorSupervozFallbackNative === true;
+      supervozPrefetchEnabled.checked = settings.leitorSupervozPrefetchEnabled === true;
       updateDiagnostics(settings);
       setStatus('Configuração salva.');
     });
@@ -133,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  [ttsProvider, supervozApiUrl, hfToken, supervozMode, supervozNfeStep, supervozFallbackNative].forEach((element) => {
+  [ttsProvider, supervozApiUrl, hfToken, supervozMode, supervozNfeStep, supervozFallbackNative, supervozPrefetchEnabled].forEach((element) => {
     element.addEventListener('change', () => updateDiagnosticsFromForm());
     element.addEventListener('input', () => updateDiagnosticsFromForm());
   });
@@ -159,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     normalized.leitorSupervozMode = normalized.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
     normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
     normalized.leitorSupervozFallbackNative = normalized.leitorSupervozFallbackNative === true;
+    normalized.leitorSupervozPrefetchEnabled = normalized.leitorSupervozPrefetchEnabled === true;
     return normalized;
   }
 
@@ -222,7 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
       leitorSupervozApiToken: hfToken.value,
       leitorSupervozMode: supervozMode.value,
       leitorSupervozNfeStep: supervozNfeStep.value,
-      leitorSupervozFallbackNative: supervozFallbackNative.checked
+      leitorSupervozFallbackNative: supervozFallbackNative.checked,
+      leitorSupervozPrefetchEnabled: supervozPrefetchEnabled.checked
     });
     diagBackendUrl.textContent = normalized.leitorSupervozApiUrl;
     diagToken.textContent = maskToken(normalized.leitorSupervozApiToken || normalized.leitorHfToken);

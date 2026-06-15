@@ -10,6 +10,7 @@
 - Texto de ajuda deixa claro que o popup é opcional para trocar endpoint/modo/token.
 - Adicionado modo de diagnóstico no popup: URL, token mascarado, motor, endpoint, resultado de `/health` e último erro.
 - Adicionado checkbox para permitir fallback para voz nativa apenas quando o usuário quiser.
+- Adicionado checkbox para pré-geração de próximo bloco, desligado por padrão para reduzir custo no Modal.
 
 ## Estrutura
 - Título: "Leitor Estácio"
