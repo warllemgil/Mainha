@@ -127,6 +127,8 @@ HF_TOKEN
 API_AUTH_TOKEN
 ```
 
+O backend valida esse token antes de carregar/gerar áudio. O header principal é `Authorization: Bearer <API_AUTH_TOKEN>`; `X-API-Token` e `x-api-key` são aceitos apenas como compatibilidade.
+
 Comando sugerido:
 
 ```bash

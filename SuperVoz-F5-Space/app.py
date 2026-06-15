@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -48,21 +48,60 @@ class TTSRequest(BaseModel):
 def require_api_token(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(auth_scheme),
+    x_api_token: str | None = Header(default=None, alias="X-API-Token"),
+    x_api_key: str | None = Header(default=None, alias="x-api-key"),
 ) -> None:
-    expected_token = os.getenv("API_AUTH_TOKEN", "").strip()
+    expected_token = clean_token(os.getenv("API_AUTH_TOKEN", ""))
     if not expected_token:
         return
 
     if request.method == "OPTIONS":
         return
 
-    token = credentials.credentials if credentials else ""
+    token = extract_request_token(request, credentials, x_api_token, x_api_key)
+    LOGGER.info(
+        "Auth %s %s token=%s expected=%s",
+        request.method,
+        request.url.path,
+        mask_token(token),
+        mask_token(expected_token),
+    )
     if token != expected_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token de API invalido.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+def clean_token(value: str | None) -> str:
+    token = (value or "").strip()
+    if token.lower().startswith("bearer "):
+        token = token[7:].strip()
+    return token.strip().strip("'\"")
+
+
+def extract_request_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None,
+    x_api_token: str | None,
+    x_api_key: str | None,
+) -> str:
+    if credentials and credentials.credentials:
+        return clean_token(credentials.credentials)
+
+    authorization = request.headers.get("authorization", "")
+    if authorization:
+        return clean_token(authorization)
+
+    return clean_token(x_api_token or x_api_key or "")
+
+
+def mask_token(value: str | None) -> str:
+    token = clean_token(value)
+    if not token:
+        return "ausente"
+    return f"{token[:4]}...{len(token)}"
 
 
 @app.on_event("startup")

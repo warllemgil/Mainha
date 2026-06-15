@@ -5,7 +5,7 @@
 ## Alteração 2026-06-15
 
 - v1.4.2: o botão `Testar conexão` usa timeout, mensagens específicas por status HTTP e diagnóstico visível no popup.
-- O endpoint testado é `GET /health`, com header `Authorization: Bearer <API_AUTH_TOKEN>`.
+- O endpoint testado é `GET /health`, via função centralizada `supervozRequest('/health')`, com headers `Authorization: Bearer <API_AUTH_TOKEN>` e `X-API-Token`.
 - Tokens são salvos em `leitorSupervozApiToken` e também em `leitorHfToken` para compatibilidade com versões antigas.
 - URL e token passam por limpeza de aspas simples/duplas extras para evitar `Failed to fetch` por `modal.run"`.
 - O fallback para voz nativa virou opção explícita em `leitorSupervozFallbackNative`.

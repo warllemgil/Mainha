@@ -140,7 +140,7 @@ Implementacao inicial adicionada em 2026-06-13:
 
 - `modal_app.py`: app Modal ASGI com GPU `T4`, volume persistente `supervoz-f5-cache` e secret `supervoz-f5-secrets`.
 - `requirements-modal.txt`: dependencias do container Modal sem reinstalar `torch` CPU por cima do PyTorch CUDA.
-- `app.py`: aceita `API_AUTH_TOKEN` opcional via Bearer token e usa diretorios configuraveis para log/cache/output.
+- `app.py`: aceita `API_AUTH_TOKEN` opcional via `Authorization: Bearer` e, por compatibilidade, `X-API-Token`/`x-api-key`; usa diretorios configuraveis para log/cache/output.
 - Extensao Estacio: popup agora aceita `URL da API SuperVoz`, permitindo trocar do Space para o endpoint Modal sem editar codigo.
 - Economia de credito: no Modal, `SUPERVOZ_PRELOAD_ON_STARTUP=false`, `SUPERVOZ_STARTUP_DIAGNOSTIC=false` e `scaledown_window=5`. O modelo so e carregado em `POST /tts`, nao no boot nem em `/health`.
 - Qualidade/continuidade em 2026-06-14: extensão usa `balanced`, `nfe_step=32`, prefetch sequencial de até 3 blocos e backend com normalização de pico.

@@ -100,23 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setStatus('Testando...');
     updateDiagnosticsFromForm({endpoint: '/health', health: 'testando', lastError: '-'});
-    logRequest('/health', apiUrl, token);
     try {
-      let response = await testarHealth(apiUrl, token);
+      let response = await supervozRequest('/health', {apiUrl, token});
       if (response.status === 401 && DEFAULT_SUPERVOZ_API_TOKEN && apiUrl === DEFAULT_SUPERVOZ_API_URL) {
         hfToken.value = DEFAULT_SUPERVOZ_API_TOKEN;
         chrome.storage.local.set({
           leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
           leitorSupervozApiToken: DEFAULT_SUPERVOZ_API_TOKEN
         });
-        response = await testarHealth(apiUrl, DEFAULT_SUPERVOZ_API_TOKEN);
+        response = await supervozRequest('/health', {apiUrl, token: DEFAULT_SUPERVOZ_API_TOKEN});
       }
-      console.log('[Popup][SuperVoz]', {
-        url: apiUrl,
-        endpoint: '/health',
-        status: response.status,
-        token: maskToken(token || DEFAULT_SUPERVOZ_API_TOKEN)
-      });
       if (!response.ok) {
         throw createHttpError(response.status);
       }
@@ -190,17 +183,36 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(value || '').trim().replace(/^['"]+|['"]+$/g, '').trim();
   }
 
-  function testarHealth(apiUrl, token) {
+  function supervozRequest(endpoint, options = {}) {
+    const apiUrl = normalizeApiUrl(options.apiUrl || supervozApiUrl.value);
+    const token = normalizeToken(options.token || hfToken.value, apiUrl);
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const method = options.method || 'GET';
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
-    return fetch(`${apiUrl}/health`, {
-      headers: buildAuthHeaders(token),
+    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || HEALTH_TIMEOUT_MS);
+
+    console.log('[Popup][SuperVoz] endpoint:', normalizedEndpoint);
+    console.log('[Popup][SuperVoz] method:', method);
+    console.log('[Popup][SuperVoz] token existe:', Boolean(token));
+    console.log('[Popup][SuperVoz] token preview:', token ? `${token.slice(0, 4)}****` : 'ausente');
+
+    return fetch(`${apiUrl}${normalizedEndpoint}`, {
+      method,
+      headers: Object.assign({}, buildAuthHeaders(token), options.headers || {}),
+      body: options.body,
       signal: controller.signal
+    }).then((response) => {
+      console.log('[Popup][SuperVoz] status:', response.status);
+      return response;
     }).finally(() => clearTimeout(timeoutId));
   }
 
   function buildAuthHeaders(token) {
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    if (!token) return {};
+    return {
+      Authorization: `Bearer ${token}`,
+      'X-API-Token': token
+    };
   }
 
   function createHttpError(status) {
@@ -246,15 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (extra.endpoint !== undefined) diagEndpoint.textContent = extra.endpoint;
     if (extra.health !== undefined) diagHealth.textContent = extra.health;
     if (extra.lastError !== undefined) diagLastError.textContent = extra.lastError;
-  }
-
-  function logRequest(endpoint, apiUrl, token) {
-    console.log('[Popup][SuperVoz]', {
-      url: apiUrl,
-      endpoint,
-      status: 'iniciando',
-      token: maskToken(token)
-    });
   }
 
   console.log('[Popup] Leitor Estácio carregado');

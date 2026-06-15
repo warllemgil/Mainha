@@ -6,7 +6,7 @@ Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do naveg
 
 - ✅ **v1.4.2: Auth e diagnóstico SuperVoz** — O popup mostra diagnóstico de backend, token, motor, endpoint, `/health` e último erro. O fallback para voz nativa só ocorre se a opção manual estiver ativada.
 - ✅ **Custo Modal reduzido** — A pré-geração de blocos fica desligada por padrão. O botão Stop aborta chamadas pendentes no navegador, mas uma inferência já recebida pelo Modal pode terminar no servidor; por isso o backend foi ajustado para encerrar o container após poucos segundos ocioso.
-- ✅ **Header confirmado** — O backend Modal usa `Authorization: Bearer <API_AUTH_TOKEN>` via `HTTPBearer`. As rotas reais são `GET /health`, `GET /voices` e `POST /tts`; `/synthesize`, `/api/tts` e `/generate` não existem e retornam `404`.
+- ✅ **Header confirmado** — O backend Modal usa `Authorization: Bearer <API_AUTH_TOKEN>` como padrão e também aceita `X-API-Token`/`x-api-key` como compatibilidade. As rotas reais são `GET /health`, `GET /voices` e `POST /tts`; `/synthesize`, `/api/tts` e `/generate` não existem e retornam `404`.
 - ✅ **v1.4.1: SuperVoz pronta para uso local** — A extensão agora usa SuperVoz como padrão, carrega `supervoz-secrets.js` antes de `content.js`/`popup.js` e migra automaticamente a URL antiga do Hugging Face Space que retorna `404`.
 - ✅ **Correção de HTTP 401** — A extensão normaliza tokens salvos no Chrome e remove prefixo `Bearer` duplicado. Quando `supervoz-secrets.js` tem token local preenchido e a URL é o Modal padrão, esse token local sobrescreve valores antigos/incorretos.
 - ✅ **Leitura em sites gerais** — O player agora é injetado em páginas `http://*/*` e `https://*/*`, não apenas em domínios da Estácio.
@@ -100,7 +100,7 @@ Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usa
 ### Integrar com API TTS Customizada
 Já existe integração com a API SuperVoz F5. A extensão vem apontada para o Modal GPU, `balanced` e `nfe_step=32`. O token padrão local é lido de `supervoz-secrets.js`, carregado antes do popup e do content script. O popup continua permitindo trocar URL/token se o endpoint mudar.
 
-Se o teste de conexão mostrava `HTTP 401`, a causa provável era token ausente/incorreto no header `Authorization: Bearer ...`, ou token antigo/digitado com prefixo `Bearer` salvo em `chrome.storage.local`. A versão `1.4.2` normaliza isso, mascara logs e exibe diagnóstico no popup.
+Se o teste de conexão ou player mostrava `HTTP 401`, a causa provável era token ausente/incorreto no request específico. Agora `GET /health` e `POST /tts` usam funções centralizadas que enviam os mesmos headers de autenticação e os mesmos logs seguros.
 
 Para gerar secrets por build/local:
 

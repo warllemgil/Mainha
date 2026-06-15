@@ -533,12 +533,8 @@
       return fetchExistente;
     }
 
-    const timeout = criarSignalComTimeout(signal, SUPERVOZ_TTS_TIMEOUT_MS);
-    registrarSupervoz('/tts');
-
-    const requestPromise = fetch(`${normalizarSupervozApiBaseUrl()}/tts`, {
+    const requestPromise = supervozRequest('/tts', {
       method: 'POST',
-      headers: montarHeadersSuperVoz(),
       body: JSON.stringify({
         voice: 'warllem',
         text: bloco.texto,
@@ -546,9 +542,10 @@
         mode: leitorSettings.leitorSupervozMode || 'fast',
         nfe_step: Number(leitorSettings.leitorSupervozNfeStep) || 8
       }),
-      signal: timeout.signal
+      signal,
+      timeoutMs: SUPERVOZ_TTS_TIMEOUT_MS,
+      expectAudio: true
     }).then(async (response) => {
-      registrarSupervoz('/tts', response.status);
       if (response.status === 401 && DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiBaseUrl() === DEFAULT_SUPERVOZ_API_URL) {
         leitorSettings.leitorHfToken = DEFAULT_SUPERVOZ_API_TOKEN;
         leitorSettings.leitorSupervozApiToken = DEFAULT_SUPERVOZ_API_TOKEN;
@@ -570,7 +567,6 @@
       salvarAudioNoCache(chave, blob);
       return blob;
     }).finally(() => {
-      timeout.clear();
       audioFetchesEmAndamento.delete(chave);
     });
 
@@ -750,8 +746,44 @@
   function montarHeadersSuperVoz(){
     const headers = {'Content-Type': 'application/json'};
     const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      headers['X-API-Token'] = token;
+    }
     return headers;
+  }
+
+  async function supervozRequest(endpoint, options = {}){
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const method = options.method || 'GET';
+    const timeout = criarSignalComTimeout(options.signal, options.timeoutMs || SUPERVOZ_TTS_TIMEOUT_MS);
+    const token = normalizarSupervozToken(leitorSettings.leitorSupervozApiToken || leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    const headers = Object.assign({}, montarHeadersSuperVoz(), options.headers || {});
+    const url = `${normalizarSupervozApiBaseUrl()}${normalizedEndpoint}`;
+
+    log('[SuperVoz] endpoint:', normalizedEndpoint);
+    log('[SuperVoz] method:', method);
+    log('[SuperVoz] token existe:', Boolean(token));
+    log('[SuperVoz] token preview:', token ? `${token.slice(0, 4)}****` : 'ausente');
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: options.body,
+        signal: timeout.signal
+      });
+      log('[SuperVoz] status:', response.status);
+      if (options.expectAudio && response.ok) {
+        const contentType = response.headers.get('Content-Type') || '';
+        if (!/audio\/wav|audio\/mpeg|application\/octet-stream/i.test(contentType)) {
+          throw new Error(`Resposta inválida da SuperVoz: ${contentType || 'sem Content-Type'}`);
+        }
+      }
+      return response;
+    } finally {
+      timeout.clear();
+    }
   }
 
   function lerBloco(i){
