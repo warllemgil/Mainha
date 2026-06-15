@@ -148,10 +148,14 @@
   const velocidades = [0.8, 1.0, 1.2, 1.5, 1.8, 2.0];
   let voices = [];
   const DEFAULT_SUPERVOZ_API_URL = 'https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run';
+  const LEGACY_SUPERVOZ_API_URLS = [
+    'https://warllem-supervoz-f5-api.hf.space'
+  ];
+  const DEFAULT_SUPERVOZ_API_TOKEN = obterTokenPadraoSuperVoz();
   const DEFAULT_SETTINGS = {
-    leitorTtsProvider: 'native',
+    leitorTtsProvider: 'supervoz',
     leitorSupervozApiUrl: DEFAULT_SUPERVOZ_API_URL,
-    leitorHfToken: '',
+    leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN,
     leitorSupervozMode: 'balanced',
     leitorSupervozNfeStep: 32
   };
@@ -242,7 +246,8 @@
     }
 
     chrome.storage.local.get(DEFAULT_SETTINGS, (items) => {
-      leitorSettings = Object.assign({}, DEFAULT_SETTINGS, items || {});
+      leitorSettings = normalizarConfiguracoes(Object.assign({}, DEFAULT_SETTINGS, items || {}));
+      chrome.storage.local.set(leitorSettings);
       atualizarUI();
     });
   }
@@ -253,6 +258,7 @@
       Object.keys(DEFAULT_SETTINGS).forEach((key) => {
         if (changes[key]) leitorSettings[key] = changes[key].newValue;
       });
+      leitorSettings = normalizarConfiguracoes(leitorSettings);
       atualizarUI();
     });
   }
@@ -395,8 +401,39 @@
   }
 
   function normalizarSupervozApiBaseUrl(){
-    const configuredUrl = (leitorSettings.leitorSupervozApiUrl || DEFAULT_SUPERVOZ_API_URL).trim();
-    return configuredUrl.replace(/\/+$/, '').replace(/\/tts$/, '');
+    return normalizarSupervozApiUrl(leitorSettings.leitorSupervozApiUrl);
+  }
+
+  function normalizarSupervozApiUrl(value){
+    const configuredUrl = (value || DEFAULT_SUPERVOZ_API_URL).trim();
+    let normalized = configuredUrl.replace(/\/+$/, '').replace(/\/(tts|health|voices)$/, '');
+    if (LEGACY_SUPERVOZ_API_URLS.includes(normalized)) {
+      normalized = DEFAULT_SUPERVOZ_API_URL;
+    }
+    return normalized;
+  }
+
+  function normalizarConfiguracoes(settings){
+    const normalized = Object.assign({}, DEFAULT_SETTINGS, settings || {});
+    normalized.leitorSupervozApiUrl = normalizarSupervozApiUrl(normalized.leitorSupervozApiUrl);
+    normalized.leitorHfToken = normalizarSupervozToken(normalized.leitorHfToken, normalized.leitorSupervozApiUrl);
+    normalized.leitorTtsProvider = normalized.leitorTtsProvider || DEFAULT_SETTINGS.leitorTtsProvider;
+    normalized.leitorSupervozMode = normalized.leitorSupervozMode || DEFAULT_SETTINGS.leitorSupervozMode;
+    normalized.leitorSupervozNfeStep = Number(normalized.leitorSupervozNfeStep) || DEFAULT_SETTINGS.leitorSupervozNfeStep;
+    return normalized;
+  }
+
+  function normalizarSupervozToken(value, apiUrl){
+    const token = (value || '').trim().replace(/^Bearer\s+/i, '').trim();
+    if (DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiUrl(apiUrl) === DEFAULT_SUPERVOZ_API_URL) {
+      return DEFAULT_SUPERVOZ_API_TOKEN;
+    }
+    return token;
+  }
+
+  function obterTokenPadraoSuperVoz(){
+    const defaults = globalThis.LEITOR_SUPERVOZ_DEFAULTS || {};
+    return (defaults.apiToken || '').trim().replace(/^Bearer\s+/i, '').trim();
   }
 
   function salvarAudioNoCache(chave, blob){
@@ -426,10 +463,7 @@
 
     const requestPromise = fetch(`${normalizarSupervozApiBaseUrl()}/tts`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${leitorSettings.leitorHfToken}`
-      },
+      headers: montarHeadersSuperVoz(),
       body: JSON.stringify({
         voice: 'warllem',
         text: bloco.texto,
@@ -439,6 +473,12 @@
       }),
       signal
     }).then(async (response) => {
+      if (response.status === 401 && DEFAULT_SUPERVOZ_API_TOKEN && normalizarSupervozApiBaseUrl() === DEFAULT_SUPERVOZ_API_URL) {
+        leitorSettings.leitorHfToken = DEFAULT_SUPERVOZ_API_TOKEN;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ leitorHfToken: DEFAULT_SUPERVOZ_API_TOKEN });
+        }
+      }
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -455,7 +495,6 @@
 
   async function preCarregarProximoBloco(){
     if (leitorSettings.leitorTtsProvider !== 'supervoz') return;
-    if (!leitorSettings.leitorHfToken) return;
     if (prefetchAtivo) return;
 
     const primeiroIndice = indiceAtual + 1;
@@ -571,12 +610,6 @@
     speechSynthesis.cancel();
     limparAudioAtual();
 
-    if (!leitorSettings.leitorHfToken) {
-      status.textContent = 'SuperVoz sem token; usando voz nativa';
-      falarNativo(bloco, sequenciaLocal);
-      return;
-    }
-
     audioAbortController = new AbortController();
     status.textContent = `Gerando SuperVoz (${indiceAtual+1}/${blocos.length})`;
     btnPlay.textContent = '...';
@@ -612,6 +645,13 @@
       status.textContent = 'SuperVoz falhou; usando voz nativa';
       falarNativo(bloco, sequenciaLocal);
     }
+  }
+
+  function montarHeadersSuperVoz(){
+    const headers = {'Content-Type': 'application/json'};
+    const token = normalizarSupervozToken(leitorSettings.leitorHfToken, leitorSettings.leitorSupervozApiUrl);
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
   }
 
   function lerBloco(i){

@@ -1,7 +1,16 @@
 # content.js — Script Principal de Leitura
 
-**Última atualização:** 2026-06-14
+**Última atualização:** 2026-06-15
 **Linhas:** ~700
+
+## Alteração 2026-06-15 — SuperVoz sem configuração manual
+
+- `supervoz` passou a ser o provedor padrão.
+- URL Modal é preenchida no código da extensão.
+- Token padrão local é lido de `globalThis.LEITOR_SUPERVOZ_DEFAULTS.apiToken`, definido por `supervoz-secrets.js`.
+- Configurações antigas apontando para `https://warllem-supervoz-f5-api.hf.space` são migradas para o Modal porque o Space atual responde `404`.
+- A SuperVoz não cai mais para voz nativa apenas por campo de token vazio; usa o token padrão.
+- Correção do `HTTP 401`: ao usar o Modal padrão e houver token local em `supervoz-secrets.js`, tokens antigos/errados salvos em `chrome.storage.local` são substituídos pelo token local. O prefixo `Bearer` colado manualmente também é removido para evitar `Authorization: Bearer Bearer ...`.
 
 ## Alteração 2026-06-14 — Leitura geral e buffer SuperVoz
 
@@ -28,7 +37,7 @@ As configurações vêm de `chrome.storage.local`:
 - `leitorSupervozMode`: `fast`, `balanced` ou `quality`.
 - `leitorSupervozNfeStep`: valor numérico enviado ao servidor.
 
-Se a SuperVoz falhar, se não houver token ou se o áudio não tocar, o código faz fallback automático para `speechSynthesis`.
+Se a SuperVoz falhar ou se o áudio não tocar, o código faz fallback automático para `speechSynthesis`.
 
 ## Alteração 2026-06-12 — Cache e Pré-carregamento
 

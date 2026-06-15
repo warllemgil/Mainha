@@ -7,7 +7,7 @@
 - Botão ■ para a leitura
 - Botão de velocidade: clique para ciclar entre 0.8× / 1.0× / 1.2× / 1.5× / 1.8× / 2.0×
 - O player pode ser arrastado para qualquer posição na tela
-- Pode usar voz nativa do navegador ou SuperVoz F5 pelo endpoint Modal configurado no popup
+- Pode usar voz nativa do navegador ou SuperVoz F5; o endpoint Modal já vem configurado
 
 ## Como instalar no Chrome
 
@@ -45,4 +45,6 @@ Para verificar quais vozes você tem:
 
 ## Usar a voz treinada
 
-No popup, escolha `SuperVoz F5`, confira a URL da API Modal, informe o token Bearer e salve. O padrão atual usa `balanced` com `nfe_step=32` e faz prefetch sequencial de até 3 blocos seguintes durante a leitura.
+No popup, a extensão já vem em `SuperVoz F5` com URL Modal. O token local é carregado de `supervoz-secrets.js` quando preenchido neste ambiente. O padrão atual usa `balanced` com `nfe_step=32` e faz prefetch sequencial de até 3 blocos seguintes durante a leitura.
+
+Se aparecer `HTTP 401` ao testar conexão, recarregue a extensão e abra o popup de novo. A versão `1.4.1` remove `Bearer` duplicado e, quando `supervoz-secrets.js` tem token local, substitui automaticamente tokens antigos/incorretos salvos no Chrome quando a URL é o Modal padrão.

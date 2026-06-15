@@ -1,9 +1,15 @@
 # manifest.json — Configuração da Extensão
 
-**Última atualização:** 2026-06-14
+**Última atualização:** 2026-06-15
 
 ## Versão
-`"version": "1.4.0"`
+`"version": "1.4.1"`
+
+## Alteração 2026-06-15
+
+- Versão atualizada para `1.4.1`.
+- `supervoz-secrets.js` é carregado antes de `content.js`, permitindo token local sem publicar segredo no commit.
+- O ajuste de token corrige `HTTP 401` causado por token antigo/incorreto salvo no armazenamento local do Chrome.
 
 ## Host Permissions (Sites onde a extensão ativa)
 - `http://*/*`

@@ -1,9 +1,11 @@
-# 🔊 Leitor Estácio — v1.4
+# 🔊 Leitor Estácio — v1.4.1
 
 Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do navegador ou SuperVoz F5.
 
 ## ✨ Principais Correções (v1.4)
 
+- ✅ **v1.4.1: SuperVoz pronta para uso local** — A extensão agora usa SuperVoz como padrão, carrega `supervoz-secrets.js` antes de `content.js`/`popup.js` e migra automaticamente a URL antiga do Hugging Face Space que retorna `404`.
+- ✅ **Correção de HTTP 401** — A extensão normaliza tokens salvos no Chrome e remove prefixo `Bearer` duplicado. Quando `supervoz-secrets.js` tem token local preenchido e a URL é o Modal padrão, esse token local sobrescreve valores antigos/incorretos.
 - ✅ **Leitura em sites gerais** — O player agora é injetado em páginas `http://*/*` e `https://*/*`, não apenas em domínios da Estácio.
 - ✅ **SuperVoz Modal como padrão** — A URL padrão da API é `https://warllemedicao--supervoz-f5-gpu-fastapi-app.modal.run`.
 - ✅ **Qualidade SuperVoz ajustada** — O padrão passou para `balanced` com `nfe_step=32`.
@@ -14,8 +16,8 @@ Extensão Chrome que lê páginas HTTP/HTTPS em voz alta com voz nativa do naveg
 ## ✨ Principais Correções (v1.3)
 
 - ✅ **SuperVoz F5 opcional** — Pode usar API configurável no popup.
-- ✅ **Fallback seguro** — Se a SuperVoz falhar ou não houver `HF_TOKEN`, usa a voz nativa do navegador.
-- ✅ **Configuração no popup** — Salva motor de voz, `HF_TOKEN`, modo e `nfe_step` em `chrome.storage.local`.
+- ✅ **Fallback seguro** — Se a SuperVoz falhar, usa a voz nativa do navegador.
+- ✅ **Configuração no popup** — Salva motor de voz, URL/token, modo e `nfe_step` em `chrome.storage.local`; os valores padrão já vêm preenchidos.
 - ✅ **URL SuperVoz configurável** — Permite apontar para o Hugging Face Space ou para o novo endpoint Modal GPU.
 - ✅ **Token fora do código** — O token não fica hardcoded nos arquivos da extensão.
 - ✅ **Permissão do Space** — `manifest.json` agora permite chamadas ao Hugging Face Space.
@@ -93,7 +95,9 @@ speechSynthesis.getVoices()
 Você verá vozes disponíveis como "Francisca (pt-BR)". O código já tenta usar Francisca automaticamente.
 
 ### Integrar com API TTS Customizada
-Já existe integração com a API SuperVoz F5. No popup, escolha `SuperVoz F5`, informe a URL base da API no campo `URL da API SuperVoz` e o token Bearer, depois salve. O padrão atual é Modal GPU com `balanced` e `nfe_step=32`.
+Já existe integração com a API SuperVoz F5. A extensão vem apontada para o Modal GPU, `balanced` e `nfe_step=32`. O token padrão local é lido de `supervoz-secrets.js`, carregado antes do popup e do content script. O popup continua permitindo trocar URL/token se o endpoint mudar.
+
+Se o teste de conexão mostrava `HTTP 401`, a causa provável era um token antigo, ausente ou digitado com prefixo `Bearer` salvo em `chrome.storage.local`. A versão `1.4.1` normaliza isso automaticamente ao abrir o popup ou usar a leitura com o Modal padrão.
 
 Para reduzir pausas, a extensão faz prefetch sequencial de até 3 blocos seguintes enquanto o áudio atual toca. Ela não dispara 3 inferências em paralelo; gera um bloco por vez para evitar múltiplos containers e gasto inesperado. O botão `Testar conexao` chama `/health`; use apenas quando precisar conferir a configuração.
 

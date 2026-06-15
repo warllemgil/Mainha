@@ -1,6 +1,13 @@
 # popup.html — Interface de Popup
 
-**Última atualização:** 2026-06-12
+**Última atualização:** 2026-06-15
+
+## Alteração 2026-06-15
+
+- Status visual atualizado para `v1.4.1`.
+- `supervoz-secrets.js` é carregado antes de `popup.js`.
+- Campo de token indica que a API pode vir configurada localmente.
+- Texto de ajuda deixa claro que o popup é opcional para trocar endpoint/modo/token.
 
 ## Estrutura
 - Título: "Leitor Estácio"

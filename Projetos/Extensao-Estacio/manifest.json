@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Leitor Estácio",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Lê páginas da web em voz alta com voz nativa ou SuperVoz F5",
   "permissions": ["activeTab", "scripting", "storage", "offscreen"],
   "host_permissions": [
@@ -35,7 +35,7 @@
         "*://stecine.azureedge.net/*",
         "*://*.ensineme.com.br/*"
       ],
-      "js": ["content.js"],
+      "js": ["supervoz-secrets.js", "content.js"],
       "css": ["player.css"],
       "all_frames": true,
       "run_at": "document_idle"
