@@ -109,7 +109,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "device": engine.device,
-        "runtime": "onnxruntime",
+        "runtime": "f5-tts-python-cpu+onnxruntime-core",
         "provider": engine.execution_provider,
         "model_loaded": engine.model_loaded,
         "mode": "lite",
@@ -144,7 +144,7 @@ def tts(request: TTSRequest) -> FileResponse:
     headers = {
         "X-Generation-Time-Seconds": f"{result.generation_time_seconds:.3f}",
         "X-TTS-Device": result.device,
-        "X-TTS-Runtime": "onnxruntime",
+        "X-TTS-Runtime": "f5-tts-python-cpu+onnxruntime-core",
         "X-TTS-NFE-Step": str(result.nfe_step),
         "Cache-Control": "no-store",
     }

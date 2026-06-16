@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import onnxruntime as ort
 import soundfile as sf
+import torch
 
 from voice_manager import ResolvedVoice, VoiceConfig, resolve_voice
 
@@ -19,8 +20,8 @@ LOGGER = logging.getLogger("supervoz_lite.engine")
 PROJECT_ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = Path(os.getenv("SUPERVOZ_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
 
-DEFAULT_LITE_NFE_STEP = int(os.getenv("SUPERVOZ_LITE_NFE_STEP", "12"))
-MIN_LITE_NFE_STEP = 10
+DEFAULT_LITE_NFE_STEP = int(os.getenv("SUPERVOZ_LITE_NFE_STEP", "4"))
+MIN_LITE_NFE_STEP = 4
 MAX_LITE_NFE_STEP = 16
 
 
@@ -37,9 +38,9 @@ class F5LiteEngine:
     def __init__(self) -> None:
         self.device = "cpu"
         self.execution_provider = "CPUExecutionProvider"
-        self._loaded: dict[str, tuple[ResolvedVoice, ort.InferenceSession]] = {}
+        self._loaded: dict[str, tuple[ResolvedVoice, object, ort.InferenceSession]] = {}
         self._lock = Lock()
-        LOGGER.info("Modo Lite inicializado com ONNX Runtime em CPU")
+        LOGGER.info("Modo Lite inicializado em CPU com F5-TTS Python e ONNX Runtime core")
 
     @property
     def model_loaded(self) -> bool:
@@ -49,7 +50,7 @@ class F5LiteEngine:
         for config in voices.values():
             self.get_voice(config)
 
-    def get_voice(self, config: VoiceConfig) -> tuple[ResolvedVoice, ort.InferenceSession]:
+    def get_voice(self, config: VoiceConfig) -> tuple[ResolvedVoice, object, ort.InferenceSession]:
         with self._lock:
             cached = self._loaded.get(config.voice_id)
             if cached:
@@ -65,9 +66,24 @@ class F5LiteEngine:
                 sess_options=session_options,
                 providers=[self.execution_provider],
             )
-            self._loaded[config.voice_id] = (resolved, session)
-            LOGGER.info("Voz Lite carregada: %s providers=%s", config.voice_id, session.get_providers())
-            return resolved, session
+            validate_onnx_core(session)
+
+            from f5_tts.api import F5TTS
+
+            model = F5TTS(
+                model="F5TTS_v1_Base",
+                ckpt_file=str(resolved.model_path),
+                vocab_file=str(resolved.vocab_path),
+                device=self.device,
+            )
+            self._loaded[config.voice_id] = (resolved, model, session)
+            LOGGER.info(
+                "Voz Lite carregada: %s onnx_providers=%s torch_cuda=%s",
+                config.voice_id,
+                session.get_providers(),
+                torch.cuda.is_available(),
+            )
+            return resolved, model, session
 
     def synthesize(
         self,
@@ -84,11 +100,12 @@ class F5LiteEngine:
 
         selected_nfe = clamp_lite_nfe(nfe_step or DEFAULT_LITE_NFE_STEP)
         selected_speed = speed if speed is not None else config.speed
-        resolved, session = self.get_voice(config)
+        resolved, model, _session = self.get_voice(config)
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         output_path = OUTPUT_DIR / f"{config.voice_id}_lite_{int(time.time() * 1000)}.wav"
         chunks = split_text(text, max_chars=int(os.getenv("SUPERVOZ_LITE_MAX_CHARS", "160")))
+        generation_text = "\n".join(chunks)
 
         start = time.perf_counter()
         LOGGER.info(
@@ -100,24 +117,18 @@ class F5LiteEngine:
             selected_speed,
         )
 
-        wav_parts: list[np.ndarray] = []
-        sample_rate = int(os.getenv("SUPERVOZ_LITE_SAMPLE_RATE", "24000"))
-        for chunk in chunks:
-            wav, part_sample_rate = run_onnx_tts(
-                session,
-                text=chunk,
-                ref_text=resolved.ref_text,
-                speed=selected_speed,
-                nfe_step=selected_nfe,
-            )
-            sample_rate = part_sample_rate or sample_rate
-            wav_parts.append(wav.astype(np.float32, copy=False))
-
-        if not wav_parts:
-            raise RuntimeError("Nenhum trecho de audio foi gerado pelo modelo ONNX.")
-
-        audio = concatenate_audio(wav_parts, sample_rate)
-        sf.write(str(output_path), audio, sample_rate)
+        model.infer(
+            ref_file=str(resolved.ref_audio_path),
+            ref_text=resolved.ref_text,
+            gen_text=generation_text,
+            nfe_step=selected_nfe,
+            speed=selected_speed,
+            file_wave=str(output_path),
+            progress=None,
+            show_info=LOGGER.info,
+        )
+        if not output_path.exists() or output_path.stat().st_size <= 0:
+            raise RuntimeError("F5-TTS nao gerou um arquivo de audio valido.")
         normalize_output_audio(output_path)
 
         elapsed = time.perf_counter() - start
@@ -129,6 +140,37 @@ class F5LiteEngine:
             nfe_step=selected_nfe,
             speed=selected_speed,
         )
+
+
+def validate_onnx_core(session: ort.InferenceSession) -> None:
+    input_names = {item.name for item in session.get_inputs()}
+    output_names = {item.name for item in session.get_outputs()}
+    expected_inputs = {"x", "cond", "text", "time", "mask"}
+    if not expected_inputs.issubset(input_names) or "pred" not in output_names:
+        LOGGER.warning(
+            "Contrato ONNX inesperado. inputs=%s outputs=%s",
+            sorted(input_names),
+            sorted(output_names),
+        )
+        return
+
+    feed: dict[str, Any] = {}
+    for item in session.get_inputs():
+        dtype = np_dtype(item.type)
+        shape = concrete_shape(item.shape)
+        if dtype == np.dtype("bool"):
+            feed[item.name] = np.ones(shape, dtype=dtype)
+        elif np.issubdtype(dtype, np.integer):
+            feed[item.name] = np.ones(shape, dtype=dtype)
+        else:
+            feed[item.name] = np.zeros(shape, dtype=dtype)
+    outputs = session.run(None, feed)
+    LOGGER.info(
+        "ONNX core validado em CPU: inputs=%s outputs=%s first_output_shape=%s",
+        sorted(input_names),
+        sorted(output_names),
+        list(np.asarray(outputs[0]).shape) if outputs else [],
+    )
 
 
 def run_onnx_tts(
@@ -200,6 +242,8 @@ def shape_for_vector(shape: list[int], length: int) -> tuple[int, ...]:
 
 
 def np_dtype(onnx_type: str) -> np.dtype:
+    if "bool" in onnx_type:
+        return np.dtype("bool")
     if "int64" in onnx_type:
         return np.dtype("int64")
     if "int32" in onnx_type:

@@ -1,6 +1,6 @@
 # SuperVoz F5 Lite — Plano de Finalizacao
 
-**Atualizado em:** 2026-06-15
+**Atualizado em:** 2026-06-16
 
 Este documento registra onde o processo parou e qual deve ser o passo a passo para finalizar o Modo Lite CPU no Google Cloud Run.
 
@@ -14,7 +14,7 @@ Ja foi entregue no repositorio:
   - `GET /voices`
   - `POST /tts`
 - Runtime Lite preparado para `onnxruntime` com `CPUExecutionProvider`.
-- Limite de `nfe_step` entre `10` e `16`, com padrao `12`.
+- Limite de `nfe_step` entre `4` e `16`, com padrao `4`.
 - Dockerfile para Google Cloud Run.
 - Script experimental de conversao para ONNX em `scripts/convert_f5_to_onnx.py`.
 - Extensao com selecao entre:
@@ -23,24 +23,52 @@ Ja foi entregue no repositorio:
 - Campo separado para URL Lite/Cloud Run.
 - Documentacao principal em `README.md`.
 
+Deploy Cloud Run executado em 2026-06-16:
+
+- Projeto: `mainha-supervoz`.
+- Regiao: `us-central1`.
+- Servico: `supervoz-f5-lite`.
+- URL: `https://supervoz-f5-lite-798667988901.us-central1.run.app`.
+- Revisao pronta: `supervoz-f5-lite-00002-tkb`.
+- `/health` respondeu `200` com `runtime=f5-tts-python-cpu+onnxruntime-core`.
+- `/voices` respondeu `200`.
+- `/tts` ainda nao concluiu: testes com `nfe_step=10` e `nfe_step=4` ficaram sem resposta ate timeout do cliente.
+
+Verificado em 2026-06-16 no bucket Hugging Face `warllem/Voz_Noslen`:
+
+- Bucket existe, publico, com `repoType=bucket`.
+- `voices/v_minha_voz_f5_tts_ptbr/model/model_2000.pt` existe.
+- `voices/v_minha_voz_f5_tts_ptbr/model/model_last.pt` existe.
+- `voices/v_minha_voz_f5_tts_ptbr/model/base_checkpoint.safetensors` existe.
+- `voices/v_minha_voz_f5_tts_ptbr/model/vocab.txt` existe.
+- `voices/v_minha_voz_f5_tts_ptbr/data_reference/referencia_voz.wav` existe.
+
+Verificado em 2026-06-16 no repositorio Hugging Face `warllem/Voz_Noslen_ONNX`:
+
+- Pacote ONNX: `onnx_packages/voz_noslen_f5tts_onnx_20260616_022201`.
+- Arquivo ONNX: `onnx/f5_tts_transformer_core.onnx` existe e tem `675496412` bytes.
+- O ONNX foi testado localmente com `onnxruntime` em CPU e executou com sucesso.
+- Entradas reais do ONNX: `x`, `cond`, `text`, `time`, `mask`.
+- Saida real do ONNX: `pred`.
+- O pacote declara `full_text_to_audio_onnx=false`: este ONNX cobre apenas o nucleo Transformer/DiT, nao um grafo completo texto-para-WAV.
+- Para gerar WAV, o pacote exige runtime F5-TTS Python + Vocos usando `model/model_2000.pt`, `model/vocab.txt` e `reference/referencia_voz.wav`.
+
 ## O que ainda falta
 
 No ambiente atual ainda nao existem:
 
-- Checkpoint treinado local (`.pt` ou `.safetensors`).
-- `vocab.txt` local.
-- `model_lite_cpu.onnx`.
-- Google Cloud CLI (`gcloud`) instalado/configurado neste workspace.
-- URL final do Cloud Run.
 - `liteApiUrl` configurada em `supervoz-secrets.js`.
+- Permissao `Logs Viewer` para a service account `codex-deploy@mainha-supervoz.iam.gserviceaccount.com`, necessaria para diagnosticar o timeout do `/tts`.
 
-Portanto, o Modo Lite esta estruturado no codigo, mas ainda nao esta operacional em producao.
+Observacao: o ONNX ja existe no repo `warllem/Voz_Noslen_ONNX`, mas ele nao e um modelo completo `text/text_ids -> audio`. O backend Lite foi ajustado para tratar esse arquivo como ONNX core validavel e usar F5-TTS Python em CPU para a geracao de WAV.
+
+Portanto, o Modo Lite esta deployado e responde `/health`, mas ainda nao esta aprovado em producao porque `/tts` nao gerou WAV no Cloud Run.
 
 ## Conteudo necessario
 
 Para continuar, precisamos ter acesso a:
 
-1. Checkpoint treinado do F5-TTS:
+1. Checkpoint treinado do F5-TTS ja disponivel no bucket:
 
 ```text
 model_2000.pt
@@ -53,7 +81,7 @@ model_last.pt
 base_checkpoint.safetensors
 ```
 
-2. Vocabulario usado no treino:
+2. Vocabulario usado no treino ja disponivel no bucket:
 
 ```text
 vocab.txt
@@ -82,116 +110,42 @@ us-central1
 
 5. Destino do artefato ONNX.
 
-Padrao esperado pelo `voices.json`:
+Padrao atual esperado pelo `voices.json`:
 
 ```text
-voices/v_minha_voz_f5_tts_ptbr/model/model_lite_cpu.onnx
+onnx_packages/voz_noslen_f5tts_onnx_20260616_022201/onnx/f5_tts_transformer_core.onnx
 ```
 
-## Passo 1 — Colocar os arquivos do modelo no workspace
+## Passo 1 — Usar o pacote ONNX pronto
 
-Criar uma pasta local temporaria:
-
-```bash
-mkdir -p /workspaces/Mainha/_local_models/supervoz
-```
-
-Colocar nela:
+O `voices.json` do backend Lite ja aponta para:
 
 ```text
-/workspaces/Mainha/_local_models/supervoz/model_2000.pt
-/workspaces/Mainha/_local_models/supervoz/vocab.txt
+hf_repo: warllem/Voz_Noslen_ONNX
+repo_type: model
+voice_path: onnx_packages/voz_noslen_f5tts_onnx_20260616_022201
+model_file: model/model_2000.pt
+vocab_file: model/vocab.txt
+ref_audio: reference/referencia_voz.wav
+onnx_model_file: onnx/f5_tts_transformer_core.onnx
 ```
 
-Esses arquivos nao devem ser commitados.
+Esses arquivos serao baixados sob demanda pelo backend para `SUPERVOZ_CACHE_DIR` ou para `SuperVoz-F5-Lite/cache`.
 
-## Passo 2 — Converter para ONNX
+## Passo 2 — Validar o ONNX core
 
-Entrar no projeto Lite:
-
-```bash
-cd /workspaces/Mainha/SuperVoz-F5-Lite
-```
-
-Criar ambiente de conversao:
-
-```bash
-python3 -m venv .venv-convert
-. .venv-convert/bin/activate
-pip install -r requirements-convert.txt
-```
-
-Rodar conversao:
-
-```bash
-python scripts/convert_f5_to_onnx.py \
-  --checkpoint /workspaces/Mainha/_local_models/supervoz/model_2000.pt \
-  --vocab /workspaces/Mainha/_local_models/supervoz/vocab.txt \
-  --output /workspaces/Mainha/_local_models/supervoz/model_lite_cpu.onnx
-```
-
-## Passo 3 — Validar o ONNX
-
-Ainda no ambiente de conversao:
-
-```bash
-python - <<'PY'
-import onnxruntime as ort
-
-model = "/workspaces/Mainha/_local_models/supervoz/model_lite_cpu.onnx"
-s = ort.InferenceSession(model, providers=["CPUExecutionProvider"])
-
-print("providers:", s.get_providers())
-print("inputs:")
-for i in s.get_inputs():
-    print(" ", i.name, i.shape, i.type)
-
-print("outputs:")
-for o in s.get_outputs():
-    print(" ", o.name, o.shape, o.type)
-PY
-```
-
-O contrato esperado pelo `lite_engine.py` aceita entradas com nomes como:
+Validacao executada localmente em 2026-06-16:
 
 ```text
-text_ids
-text_lengths
-ref_text_ids
-ref_text_lengths
-speed
-n_steps
+providers: CPUExecutionProvider
+inputs: x, cond, text, time, mask
+output: pred
+run_elapsed_seconds: ~0.87
 ```
 
-Se o grafo ONNX sair com nomes diferentes, o arquivo `lite_engine.py` deve ser ajustado para mapear as entradas reais.
+O backend tambem roda essa validacao no carregamento da voz.
 
-## Passo 4 — Enviar o ONNX para o reposititorio/bucket da voz
-
-O backend Lite busca o arquivo definido em `SuperVoz-F5-Lite/voices.json`:
-
-```json
-"onnx_model_file": "model/model_lite_cpu.onnx"
-```
-
-Com `voice_path`:
-
-```text
-voices/v_minha_voz_f5_tts_ptbr
-```
-
-Logo, o caminho remoto esperado e:
-
-```text
-voices/v_minha_voz_f5_tts_ptbr/model/model_lite_cpu.onnx
-```
-
-Enviar o arquivo para esse caminho no mesmo bucket/repo configurado:
-
-```text
-warllem/Voz_Noslen
-```
-
-## Passo 5 — Testar API Lite localmente
+## Passo 3 — Testar API Lite localmente
 
 Instalar dependencias da API:
 
@@ -206,7 +160,7 @@ Rodar servidor local:
 
 ```bash
 API_AUTH_TOKEN="SEU_TOKEN" \
-SUPERVOZ_LITE_NFE_STEP=12 \
+SUPERVOZ_LITE_NFE_STEP=4 \
 uvicorn app:app --host 0.0.0.0 --port 8080
 ```
 
@@ -223,11 +177,11 @@ curl -L \
   -H "Authorization: Bearer SEU_TOKEN" \
   -H "Content-Type: application/json" \
   -X POST http://localhost:8080/tts \
-  -d '{"voice":"warllem","text":"Teste do modo lite em CPU.","speed":1.0,"mode":"lite","nfe_step":12}' \
+  -d '{"voice":"warllem","text":"Teste do modo lite em CPU.","speed":1.0,"mode":"lite","nfe_step":4}' \
   --output /tmp/supervoz_lite_test.wav
 ```
 
-## Passo 6 — Preparar Google Cloud
+## Passo 4 — Preparar Google Cloud
 
 No terminal com Google Cloud CLI instalado:
 
@@ -243,7 +197,7 @@ Confirmar projeto:
 gcloud config list
 ```
 
-## Passo 7 — Deploy no Cloud Run
+## Passo 5 — Deploy no Cloud Run
 
 Entrar na pasta:
 
@@ -259,13 +213,13 @@ gcloud run deploy supervoz-f5-lite \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
-  --cpu 2 \
-  --memory 2Gi \
+  --cpu 4 \
+  --memory 12Gi \
   --concurrency 1 \
   --min-instances 0 \
   --max-instances 1 \
-  --timeout 300 \
-  --set-env-vars API_AUTH_TOKEN=SEU_TOKEN,SUPERVOZ_LITE_NFE_STEP=12,ORT_NUM_THREADS=2
+  --timeout 900 \
+  --set-env-vars API_AUTH_TOKEN=SEU_TOKEN,SUPERVOZ_LITE_NFE_STEP=4,ORT_NUM_THREADS=2
 ```
 
 Guardar a URL retornada, por exemplo:
@@ -274,7 +228,7 @@ Guardar a URL retornada, por exemplo:
 https://supervoz-f5-lite-xxxxx-uc.a.run.app
 ```
 
-## Passo 8 — Testar Cloud Run
+## Passo 6 — Testar Cloud Run
 
 ```bash
 curl -H "Authorization: Bearer SEU_TOKEN" \
@@ -288,11 +242,11 @@ curl -L \
   -H "Authorization: Bearer SEU_TOKEN" \
   -H "Content-Type: application/json" \
   -X POST https://supervoz-f5-lite-xxxxx-uc.a.run.app/tts \
-  -d '{"voice":"warllem","text":"Teste do modo lite no Cloud Run.","speed":1.0,"mode":"lite","nfe_step":12}' \
+  -d '{"voice":"warllem","text":"Teste do modo lite no Cloud Run.","speed":1.0,"mode":"lite","nfe_step":4}' \
   --output /tmp/supervoz_lite_cloudrun.wav
 ```
 
-## Passo 9 — Configurar extensao
+## Passo 7 — Configurar extensao
 
 Gerar `supervoz-secrets.js` local:
 
@@ -310,9 +264,9 @@ Ou preencher manualmente no popup:
 - Processamento: `Modo Lite (CPU)`
 - URL Lite: URL do Cloud Run
 - Token: `SEU_TOKEN`
-- NFE: entre `10` e `16`
+- NFE: entre `4` e `16`
 
-## Passo 10 — Validar na extensao
+## Passo 8 — Validar na extensao
 
 1. Recarregar a extensao em `chrome://extensions`.
 2. Abrir o popup.
@@ -328,17 +282,17 @@ Ou preencher manualmente no popup:
 
 ## Riscos conhecidos
 
-- A conversao ONNX do F5-TTS e experimental.
-- Se o grafo exportado nao tiver entradas compativeis, sera necessario ajustar `lite_engine.py`.
+- O ONNX disponivel e apenas o nucleo Transformer/DiT, nao o pipeline completo texto-para-WAV.
+- O backend Lite precisa baixar e carregar `model_2000.pt` alem do ONNX core.
 - CPU serverless pode ser mais lento que GPU; por isso o Lite usa textos menores por chunk e `nfe_step` baixo.
 - Cloud Run com `min-instances=0` pode ter cold start.
-- Se o modelo ONNX ficar muito grande, o download no cold start pode impactar a primeira chamada.
+- O download inicial do checkpoint e do ONNX pode impactar a primeira chamada.
 
 ## Criterio de pronto
 
 O Modo Lite sera considerado finalizado quando:
 
-- `model_lite_cpu.onnx` existir no destino remoto.
+- `onnx/f5_tts_transformer_core.onnx` existir no pacote `warllem/Voz_Noslen_ONNX`.
 - `/health` do Cloud Run responder `status=ok`.
 - `/tts` do Cloud Run gerar WAV valido.
 - A extensao alternar entre Ultra e Lite sem mudar codigo.

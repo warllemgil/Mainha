@@ -1,8 +1,12 @@
 .modal-venv/
+.gcloud-sdk/
+.gcloud-config/
 .venv/
+.venv-convert/
 venv/
 env/
 __pycache__/
 *.py[cod]
 .env
 *.log
+_local_models/

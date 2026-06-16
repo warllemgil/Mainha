@@ -1,15 +1,15 @@
 {
   "warllem": {
     "name": "Voz do Warllem",
-    "hf_source": "https://huggingface.co/buckets/warllem/Voz_Noslen",
-    "hf_repo": "warllem/Voz_Noslen",
+    "hf_source": "https://huggingface.co/warllem/Voz_Noslen_ONNX",
+    "hf_repo": "warllem/Voz_Noslen_ONNX",
     "repo_type": "bucket",
-    "voice_path": "voices/v_minha_voz_f5_tts_ptbr",
+    "voice_path": "onnx_packages/voz_noslen_f5tts_onnx_20260616_022201",
     "model_file": "model/model_2000.pt",
-    "onnx_model_file": "model/model_lite_cpu.onnx",
+    "onnx_model_file": "onnx/f5_tts_transformer_core.onnx",
     "vocab_file": "model/vocab.txt",
-    "ref_audio": "data_reference/referencia_voz.wav",
-    "ref_text": "",
+    "ref_audio": "reference/referencia_voz.wav",
+    "ref_text": "Questão 28 do caderno azul, 28 do amarelo, 42 do branco, 26 do rosa de 2023. Beleza? Como é que eu vou resolver? Primeira coisa, eu vou olhar para o.",
     "language": "pt-BR",
     "speed": 1.0,
     "default_mode": "lite"

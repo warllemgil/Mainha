@@ -6,3 +6,6 @@ requests>=2.32.0
 onnxruntime>=1.18.0
 soundfile>=0.12.1
 numpy>=1.26.0
+torch
+torchaudio
+f5-tts

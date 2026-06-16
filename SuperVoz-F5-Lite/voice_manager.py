@@ -40,6 +40,7 @@ class VoiceConfig:
 @dataclass(frozen=True)
 class ResolvedVoice:
     config: VoiceConfig
+    model_path: Path
     onnx_model_path: Path
     vocab_path: Path
     ref_audio_path: Path
@@ -64,22 +65,24 @@ def public_voice_info(config: VoiceConfig) -> dict[str, Any]:
         "id": config.voice_id,
         "name": config.name,
         "language": config.language,
-        "runtime": "onnxruntime-cpu",
+        "runtime": "f5-tts-python-cpu+onnxruntime-core",
     }
 
 
 def resolve_voice(config: VoiceConfig) -> ResolvedVoice:
+    model_path = resolve_artifact(config, config.model_file)
     onnx_model_path = resolve_artifact(config, config.onnx_model_file)
     vocab_path = resolve_artifact(config, config.vocab_file)
     ref_audio_path = resolve_artifact(config, config.ref_audio)
     ref_text = resolve_ref_text(config)
 
-    for path in (onnx_model_path, vocab_path, ref_audio_path):
+    for path in (model_path, onnx_model_path, vocab_path, ref_audio_path):
         if not path.is_file() or path.stat().st_size <= 0:
             raise VoiceConfigError(f"Artefato invalido ou vazio: {path}")
 
     return ResolvedVoice(
         config=config,
+        model_path=model_path,
         onnx_model_path=onnx_model_path,
         vocab_path=vocab_path,
         ref_audio_path=ref_audio_path,
@@ -128,7 +131,11 @@ def remote_path(config: VoiceConfig, relative_file: str) -> str:
 def download_bucket_file(config: VoiceConfig, relative_file: str, local_path: Path) -> Path:
     local_path.parent.mkdir(parents=True, exist_ok=True)
     encoded = quote(remote_path(config, relative_file), safe="/")
-    url = f"{config.hf_source.rstrip('/')}/resolve/{encoded}"
+    base_url = config.hf_source.rstrip("/")
+    if "/buckets/" in base_url:
+        url = f"{base_url}/resolve/{encoded}"
+    else:
+        url = f"{base_url}/resolve/main/{encoded}"
     headers = {}
     token = os.getenv("HF_TOKEN")
     if token:
